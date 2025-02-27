@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Trash2, RefreshCw } from "lucide-react";
+import { Trash2, RefreshCw, Timer } from "lucide-react";
 import { format } from "date-fns";
+import { PomodoroTimer } from "./pomodoro-timer";
 
 interface TaskListProps {
   tasks: Task[];
@@ -15,6 +16,7 @@ interface TaskListProps {
 
 export function TaskList({ tasks, onToggleComplete, onDelete }: TaskListProps) {
   const [filter, setFilter] = useState<string>("all");
+  const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);
 
   const filteredTasks = tasks.filter(task => {
     if (filter === "all") return true;
@@ -63,37 +65,55 @@ export function TaskList({ tasks, onToggleComplete, onDelete }: TaskListProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         {filteredTasks.map(task => (
-          <div key={task.id} className="flex items-start justify-between p-4 rounded-lg border">
-            <div className="flex items-start gap-4">
-              <Checkbox
-                checked={task.completed}
-                onCheckedChange={() => onToggleComplete(task.id)}
-              />
-              <div>
-                <p className={`font-medium ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
-                  {task.title}
-                </p>
-                <div className="flex gap-2 mt-1">
-                  <span className={`text-xs px-2 py-1 rounded-full ${priorityBadgeColor(task.priority)}`}>
-                    {task.priority}
-                  </span>
-                  {task.recurrence !== "none" && (
-                    <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 flex items-center gap-1">
-                      <RefreshCw className="h-3 w-3" />
-                      {getRecurrenceText(task)}
+          <div key={task.id} className="flex flex-col p-4 rounded-lg border">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-4">
+                <Checkbox
+                  checked={task.completed}
+                  onCheckedChange={() => onToggleComplete(task.id)}
+                />
+                <div>
+                  <p className={`font-medium ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
+                    {task.title}
+                  </p>
+                  <div className="flex gap-2 mt-1">
+                    <span className={`text-xs px-2 py-1 rounded-full ${priorityBadgeColor(task.priority)}`}>
+                      {task.priority}
                     </span>
+                    {task.recurrence !== "none" && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 flex items-center gap-1">
+                        <RefreshCw className="h-3 w-3" />
+                        {getRecurrenceText(task)}
+                      </span>
+                    )}
+                  </div>
+                  {task.nextDue && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Next due: {format(task.nextDue, "PPP")}
+                    </p>
                   )}
                 </div>
-                {task.nextDue && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Next due: {format(task.nextDue, "PPP")}
-                  </p>
-                )}
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setActiveTimerTaskId(
+                    activeTimerTaskId === task.id ? null : task.id
+                  )}
+                >
+                  <Timer className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => onDelete(task.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => onDelete(task.id)}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {activeTimerTaskId === task.id && (
+              <div className="mt-4 border-t pt-4">
+                <PomodoroTimer taskTitle={task.title} />
+              </div>
+            )}
           </div>
         ))}
         {filteredTasks.length === 0 && (
