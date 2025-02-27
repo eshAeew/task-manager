@@ -14,6 +14,8 @@ export function getTasks(): Task[] {
       createdAt: parseISO(task.createdAt),
       lastCompleted: task.lastCompleted ? parseISO(task.lastCompleted) : null,
       nextDue: task.nextDue ? parseISO(task.nextDue) : null,
+      dueDate: task.dueDate ? parseISO(task.dueDate) : null,
+      reminderTime: task.reminderTime ? parseISO(task.reminderTime) : null,
     }));
   } catch {
     return [];
@@ -74,6 +76,9 @@ export function addTask(task: InsertTask): Task {
       createdAt: new Date(),
       lastCompleted: null,
     } as Task) : null,
+    dueDate: task.dueDate || null,
+    reminderTime: task.reminderTime || null,
+    recurrenceInterval: task.recurrenceInterval || null,
   };
   tasks.push(newTask);
   saveTasks(tasks);
@@ -104,4 +109,18 @@ export function deleteTask(id: number) {
   const tasks = getTasks();
   const filtered = tasks.filter(t => t.id !== id);
   saveTasks(filtered);
+}
+
+export function importTasks(newTasks: Task[]) {
+  // Convert date strings to Date objects
+  const processedTasks = newTasks.map(task => ({
+    ...task,
+    createdAt: new Date(task.createdAt),
+    lastCompleted: task.lastCompleted ? new Date(task.lastCompleted) : null,
+    nextDue: task.nextDue ? new Date(task.nextDue) : null,
+    dueDate: task.dueDate ? new Date(task.dueDate) : null,
+    reminderTime: task.reminderTime ? new Date(task.reminderTime) : null,
+  }));
+  saveTasks(processedTasks);
+  return processedTasks;
 }

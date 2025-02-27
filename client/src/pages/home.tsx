@@ -20,7 +20,7 @@ export default function Home() {
   const handleToggleComplete = (id: number) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
-    
+
     const updated = updateTask(id, { completed: !task.completed });
     if (updated) {
       setTasks(prev => prev.map(t => t.id === id ? updated : t));
@@ -32,6 +32,10 @@ export default function Home() {
     setTasks(prev => prev.filter(t => t.id !== id));
   };
 
+  const handleImportTasks = (importedTasks: Task[]) => {
+    setTasks(importedTasks);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-8 px-4">
@@ -39,7 +43,7 @@ export default function Home() {
           <h1 className="text-4xl font-bold">Task Manager</h1>
           <ThemeToggle />
         </div>
-        
+
         <div className="grid gap-8 md:grid-cols-[350px,1fr]">
           <div>
             <TaskForm onSubmit={handleAddTask} />
@@ -49,6 +53,7 @@ export default function Home() {
               tasks={tasks}
               onToggleComplete={handleToggleComplete}
               onDelete={handleDeleteTask}
+              onImport={handleImportTasks}
             />
           </div>
         </div>

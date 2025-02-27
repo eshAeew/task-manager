@@ -15,6 +15,10 @@ export const tasks = pgTable("tasks", {
   recurrenceInterval: text("recurrence_interval"), // For custom intervals (e.g., "3 days")
   lastCompleted: timestamp("last_completed"),
   nextDue: timestamp("next_due"),
+  // Add due date and reminder fields
+  dueDate: timestamp("due_date"),
+  reminderEnabled: boolean("reminder_enabled").notNull().default(false),
+  reminderTime: timestamp("reminder_time"), // When to show the reminder
 });
 
 export const insertTaskSchema = createInsertSchema(tasks)
@@ -25,6 +29,9 @@ export const insertTaskSchema = createInsertSchema(tasks)
     recurrence: true,
     recurrenceInterval: true,
     nextDue: true,
+    dueDate: true,
+    reminderEnabled: true,
+    reminderTime: true,
   })
   .extend({
     title: z.string().min(1, "Title is required").max(100),
@@ -32,6 +39,9 @@ export const insertTaskSchema = createInsertSchema(tasks)
     recurrence: z.enum(["none", "daily", "weekly", "monthly", "custom"]).default("none"),
     recurrenceInterval: z.string().optional(),
     nextDue: z.date().optional(),
+    dueDate: z.date().optional(),
+    reminderEnabled: z.boolean().default(false),
+    reminderTime: z.date().optional(),
   });
 
 export type InsertTask = z.infer<typeof insertTaskSchema>;
