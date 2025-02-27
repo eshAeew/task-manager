@@ -6,12 +6,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
+import { suggestTaskPriority } from "@/lib/task-analyzer";
 
 interface TaskFormProps {
   onSubmit: (data: InsertTask) => void;
@@ -32,6 +33,15 @@ export function TaskForm({ onSubmit, defaultValues }: TaskFormProps) {
       ...defaultValues,
     },
   });
+
+  // Watch title changes to suggest priority
+  const title = form.watch("title");
+  useEffect(() => {
+    if (title && !form.getValues("priority")) {
+      const suggestedPriority = suggestTaskPriority(title);
+      form.setValue("priority", suggestedPriority);
+    }
+  }, [title, form]);
 
   const handleRecurrenceChange = (value: string) => {
     form.setValue("recurrence", value as InsertTask["recurrence"]);

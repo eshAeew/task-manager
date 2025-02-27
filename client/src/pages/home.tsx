@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/task-list";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { TrashBin } from "@/components/trash-bin";
 import { VoiceInput } from "@/components/voice-input";
@@ -22,10 +21,9 @@ export default function Home() {
   };
 
   const handleVoiceInput = (transcript: string) => {
-    // Simple task creation from voice input
     const newTask: InsertTask = {
       title: transcript,
-      priority: "medium", // Default priority
+      priority: suggestTaskPriority(transcript), // Use the analyzer here
       completed: false,
       recurrence: "none",
       reminderEnabled: false,
@@ -61,10 +59,7 @@ export default function Home() {
       <div className="container mx-auto py-8 px-4">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold">Task Manager</h1>
-          <div className="flex items-center gap-2">
-            <VoiceInput onTranscript={handleVoiceInput} />
-            <ThemeToggle />
-          </div>
+          <VoiceInput onTranscript={handleVoiceInput} />
         </div>
 
         <div className="mb-8">
@@ -98,4 +93,10 @@ export default function Home() {
       </div>
     </div>
   );
+}
+
+// Placeholder function - needs actual implementation
+function suggestTaskPriority(transcript: string): "high" | "medium" | "low" {
+  // Add logic to analyze transcript and suggest priority
+  return "medium"; 
 }
