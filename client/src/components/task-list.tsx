@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Trash2, RefreshCw, Timer, Bell, Download, Upload, Layout, Maximize2, Minimize2 } from "lucide-react";
+import { Trash2, RefreshCw, Timer, Bell, Download, Upload, Layout, Maximize2, Minimize2, Paperclip } from "lucide-react";
 import { format, isPast } from "date-fns";
 import { PomodoroTimer } from "./pomodoro-timer";
 import { TaskTimer } from "./task-timer";
@@ -25,9 +25,9 @@ interface TaskListProps {
   onChangeView: (view: "list" | "kanban") => void;
 }
 
-export function TaskList({ 
-  tasks, 
-  onToggleComplete, 
+export function TaskList({
+  tasks,
+  onToggleComplete,
   onDeleteTask,
   onImportTasks,
   onTimeUpdate,
@@ -287,12 +287,23 @@ export function TaskList({
                       Next due: {format(task.nextDue, "PPP")}
                     </p>
                   )}
+                  {task.attachmentUrl && (
+                    <a
+                      href={task.attachmentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      <Paperclip className="h-3 w-3" />
+                      View Attachment
+                    </a>
+                  )}
                   <TaskTimer task={task} onTimeUpdate={onTimeUpdate} />
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="icon"
                   onClick={() => setActiveTimerTaskId(
                     activeTimerTaskId === task.id ? null : task.id

@@ -11,8 +11,9 @@ import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Paperclip } from "lucide-react";
 import { suggestTaskPriority } from "@/lib/task-analyzer";
+import { useToast } from "@/hooks/use-toast";
 
 interface TaskFormProps {
   onSubmit: (data: InsertTask) => void;
@@ -21,6 +22,7 @@ interface TaskFormProps {
 
 export function TaskForm({ onSubmit, defaultValues }: TaskFormProps) {
   const [showCustomInterval, setShowCustomInterval] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<InsertTask>({
     resolver: zodResolver(insertTaskSchema),
@@ -30,6 +32,7 @@ export function TaskForm({ onSubmit, defaultValues }: TaskFormProps) {
       completed: false,
       recurrence: "none",
       reminderEnabled: false,
+      status: "todo",
       ...defaultValues,
     },
   });
@@ -55,6 +58,42 @@ export function TaskForm({ onSubmit, defaultValues }: TaskFormProps) {
     form.setValue("reminderEnabled", checked);
     if (!checked) {
       form.setValue("reminderTime", undefined);
+    }
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (limit to 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select a file smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      form.setValue("attachmentUrl", base64);
+      toast({
+        title: "File attached",
+        description: "The file has been attached to the task",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to attach file. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -93,6 +132,35 @@ export function TaskForm({ onSubmit, defaultValues }: TaskFormProps) {
                   <SelectItem value="high">High</SelectItem>
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="attachmentUrl"
+          render={() => (
+            <FormItem>
+              <FormLabel>Attachment</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <input
+                    type="file"
+                    onChange={handleFileChange}
+                    accept="image/*,.pdf,.doc,.docx"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full flex items-center gap-2"
+                  >
+                    <Paperclip className="h-4 w-4" />
+                    Add Attachment
+                  </Button>
+                </div>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
