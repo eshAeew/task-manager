@@ -4,20 +4,39 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Trash2, RefreshCw, Timer, Bell, Download, Upload } from "lucide-react";
+import { Trash2, RefreshCw, Timer, Bell, Download, Upload, Layout, Maximize2, Minimize2 } from "lucide-react";
 import { format, isPast } from "date-fns";
 import { PomodoroTimer } from "./pomodoro-timer";
+import { TaskTimer } from "./task-timer";
 import { useToast } from "@/hooks/use-toast";
 import { getTasks, importTasks } from "@/lib/tasks";
+import { KanbanBoard } from "./kanban-board";
 
 interface TaskListProps {
   tasks: Task[];
   onToggleComplete: (id: number) => void;
-  onDelete: (id: number) => void;
-  onImport: (tasks: Task[]) => void;
+  onDeleteTask: (id: number) => void;
+  onImportTasks: (tasks: Task[]) => void;
+  onTimeUpdate: (taskId: number, timeSpent: number) => void;
+  onUpdateStatus: (id: number, status: Task["status"]) => void;
+  view: "list" | "kanban";
+  isFocusMode: boolean;
+  onToggleFocusMode: () => void;
+  onChangeView: (view: "list" | "kanban") => void;
 }
 
-export function TaskList({ tasks, onToggleComplete, onDelete, onImport }: TaskListProps) {
+export function TaskList({ 
+  tasks, 
+  onToggleComplete, 
+  onDeleteTask,
+  onImportTasks,
+  onTimeUpdate,
+  onUpdateStatus,
+  view,
+  isFocusMode,
+  onToggleFocusMode,
+  onChangeView,
+}: TaskListProps) {
   const [filter, setFilter] = useState<string>("all");
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);
   const { toast } = useToast();
@@ -31,7 +50,7 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onImport }: TaskLi
           task.reminderEnabled &&
           task.reminderTime &&
           !task.completed &&
-          Math.abs(now.getTime() - new Date(task.reminderTime).getTime()) < 60000 // Within 1 minute
+          Math.abs(now.getTime() - new Date(task.reminderTime).getTime()) < 60000
         ) {
           if (Notification.permission === "granted") {
             new Notification(`Task Reminder: ${task.title}`, {
@@ -43,7 +62,7 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onImport }: TaskLi
       });
     };
 
-    const interval = setInterval(checkReminders, 30000); // Check every 30 seconds
+    const interval = setInterval(checkReminders, 30000);
     return () => clearInterval(interval);
   }, [tasks]);
 
@@ -101,7 +120,7 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onImport }: TaskLi
       try {
         const tasks = JSON.parse(e.target?.result as string);
         importTasks(tasks);
-        onImport(tasks);
+        onImportTasks(tasks);
         toast({
           title: "Tasks Imported",
           description: "Your tasks have been imported successfully.",
@@ -115,8 +134,49 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onImport }: TaskLi
       }
     };
     reader.readAsText(file);
-    event.target.value = ''; // Reset input
+    event.target.value = '';
   };
+
+  if (view === "kanban") {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>Tasks</CardTitle>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => onChangeView("list")}
+              >
+                <Layout className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onToggleFocusMode}
+              >
+                {isFocusMode ? (
+                  <Minimize2 className="h-4 w-4" />
+                ) : (
+                  <Maximize2 className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <KanbanBoard
+            tasks={tasks}
+            onToggleComplete={onToggleComplete}
+            onDeleteTask={onDeleteTask}
+            onTimeUpdate={onTimeUpdate}
+            onUpdateStatus={onUpdateStatus}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -137,6 +197,24 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onImport }: TaskLi
             </Select>
           </CardTitle>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => onChangeView("kanban")}
+            >
+              <Layout className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onToggleFocusMode}
+            >
+              {isFocusMode ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -209,6 +287,7 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onImport }: TaskLi
                       Next due: {format(task.nextDue, "PPP")}
                     </p>
                   )}
+                  <TaskTimer task={task} onTimeUpdate={onTimeUpdate} />
                 </div>
               </div>
               <div className="flex gap-2">
@@ -221,7 +300,11 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onImport }: TaskLi
                 >
                   <Timer className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => onDelete(task.id)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDeleteTask(task.id)}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>

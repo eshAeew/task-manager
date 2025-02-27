@@ -1,15 +1,19 @@
 import { useState, useEffect } from "react";
 import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/task-list";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { TrashBin } from "@/components/trash-bin";
 import { VoiceInput } from "@/components/voice-input";
 import { getTasks, addTask, updateTask, deleteTask } from "@/lib/tasks";
 import type { Task, InsertTask } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { suggestTaskPriority } from "@/lib/task-analyzer";
 
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [view, setView] = useState<"list" | "kanban">("list");
+  const [isFocusMode, setIsFocusMode] = useState(false);
 
   useEffect(() => {
     setTasks(getTasks());
@@ -23,10 +27,11 @@ export default function Home() {
   const handleVoiceInput = (transcript: string) => {
     const newTask: InsertTask = {
       title: transcript,
-      priority: suggestTaskPriority(transcript), // Use the analyzer here
+      priority: suggestTaskPriority(transcript),
       completed: false,
       recurrence: "none",
       reminderEnabled: false,
+      status: "todo",
     };
     handleAddTask(newTask);
   };
@@ -35,7 +40,17 @@ export default function Home() {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
 
-    const updated = updateTask(id, { completed: !task.completed });
+    const updated = updateTask(id, { 
+      completed: !task.completed,
+      status: !task.completed ? "done" : task.status 
+    });
+    if (updated) {
+      setTasks(prev => prev.map(t => t.id === id ? updated : t));
+    }
+  };
+
+  const handleUpdateStatus = (id: number, status: Task["status"]) => {
+    const updated = updateTask(id, { status });
     if (updated) {
       setTasks(prev => prev.map(t => t.id === id ? updated : t));
     }
@@ -54,12 +69,22 @@ export default function Home() {
     setTasks(prev => [...prev, task]);
   };
 
+  const handleTimeUpdate = (taskId: number, timeSpent: number) => {
+    const updated = updateTask(taskId, { timeSpent });
+    if (updated) {
+      setTasks(prev => prev.map(t => t.id === taskId ? updated : t));
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen bg-background ${isFocusMode ? 'bg-black/95' : ''}`}>
       <div className="container mx-auto py-8 px-4">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold">Task Manager</h1>
-          <VoiceInput onTranscript={handleVoiceInput} />
+          <div className="flex items-center gap-2">
+            <VoiceInput onTranscript={handleVoiceInput} />
+            <ThemeToggle />
+          </div>
         </div>
 
         <div className="mb-8">
@@ -80,8 +105,14 @@ export default function Home() {
                 <TaskList 
                   tasks={tasks}
                   onToggleComplete={handleToggleComplete}
-                  onDelete={handleDeleteTask}
-                  onImport={handleImportTasks}
+                  onDeleteTask={handleDeleteTask}
+                  onImportTasks={handleImportTasks}
+                  onTimeUpdate={handleTimeUpdate}
+                  onUpdateStatus={handleUpdateStatus}
+                  view={view}
+                  isFocusMode={isFocusMode}
+                  onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
+                  onChangeView={(v) => setView(v)}
                 />
               </div>
             </div>
@@ -93,10 +124,4 @@ export default function Home() {
       </div>
     </div>
   );
-}
-
-// Placeholder function - needs actual implementation
-function suggestTaskPriority(transcript: string): "high" | "medium" | "low" {
-  // Add logic to analyze transcript and suggest priority
-  return "medium"; 
 }
