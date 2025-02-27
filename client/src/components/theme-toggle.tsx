@@ -22,9 +22,16 @@ export function ThemeToggle() {
 
   useEffect(() => {
     const root = window.document.documentElement;
+
+    // Remove existing theme classes
     root.classList.remove("light", "dark");
     root.classList.add(theme.mode);
+
+    // Apply the primary color to CSS variables
     root.style.setProperty("--primary", theme.color);
+    root.style.setProperty("--primary-foreground", "hsl(0 0% 98%)");
+
+    // Store preference
     localStorage.setItem("theme-preference", JSON.stringify(theme));
   }, [theme]);
 
@@ -47,7 +54,7 @@ export function ThemeToggle() {
                   className="w-4 h-4 rounded-full"
                   style={{ backgroundColor: t.primary }}
                 />
-                {t.name}
+                {t.name.charAt(0).toUpperCase() + t.name.slice(1)}
               </div>
             </DropdownMenuItem>
           ))}
