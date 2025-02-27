@@ -1,7 +1,13 @@
 import { Task, InsertTask } from "@shared/schema";
-import { addDays, addWeeks, addMonths, parseISO } from "date-fns";
+import { addDays, addWeeks, addMonths, parseISO, subDays } from "date-fns";
 
 const STORAGE_KEY = "tasks";
+const TRASH_KEY = "deleted_tasks";
+const TRASH_EXPIRY_DAYS = 7;
+
+interface DeletedTask extends Task {
+  deletedAt: string;
+}
 
 export function getTasks(): Task[] {
   const stored = localStorage.getItem(STORAGE_KEY);
@@ -20,6 +26,43 @@ export function getTasks(): Task[] {
   } catch {
     return [];
   }
+}
+
+export function getDeletedTasks(): DeletedTask[] {
+  const stored = localStorage.getItem(TRASH_KEY);
+  if (!stored) return [];
+  try {
+    const tasks = JSON.parse(stored);
+    // Remove expired tasks (older than 7 days)
+    const currentDate = new Date();
+    const validTasks = tasks.filter((task: DeletedTask) => {
+      const deletedDate = new Date(task.deletedAt);
+      const daysDiff = Math.floor(
+        (currentDate.getTime() - deletedDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      return daysDiff < TRASH_EXPIRY_DAYS;
+    });
+
+    if (validTasks.length !== tasks.length) {
+      localStorage.setItem(TRASH_KEY, JSON.stringify(validTasks));
+    }
+
+    return validTasks.map((task: any) => ({
+      ...task,
+      createdAt: parseISO(task.createdAt),
+      lastCompleted: task.lastCompleted ? parseISO(task.lastCompleted) : null,
+      nextDue: task.nextDue ? parseISO(task.nextDue) : null,
+      dueDate: task.dueDate ? parseISO(task.dueDate) : null,
+      reminderTime: task.reminderTime ? parseISO(task.reminderTime) : null,
+      deletedAt: task.deletedAt,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function saveDeletedTasks(tasks: DeletedTask[]) {
+  localStorage.setItem(TRASH_KEY, JSON.stringify(tasks));
 }
 
 function calculateNextDueDate(task: Task): Date | null {
@@ -107,8 +150,44 @@ export function updateTask(id: number, updates: Partial<InsertTask>) {
 
 export function deleteTask(id: number) {
   const tasks = getTasks();
+  const taskToDelete = tasks.find(t => t.id === id);
+  if (taskToDelete) {
+    // Move to trash
+    const deletedTasks = getDeletedTasks();
+    const deletedTask: DeletedTask = {
+      ...taskToDelete,
+      deletedAt: new Date().toISOString(),
+    };
+    deletedTasks.push(deletedTask);
+    saveDeletedTasks(deletedTasks);
+  }
+
   const filtered = tasks.filter(t => t.id !== id);
   saveTasks(filtered);
+}
+
+export function restoreTask(id: number) {
+  const deletedTasks = getDeletedTasks();
+  const taskToRestore = deletedTasks.find(t => t.id === id);
+  if (!taskToRestore) return;
+
+  // Remove from trash
+  const updatedDeletedTasks = deletedTasks.filter(t => t.id !== id);
+  saveDeletedTasks(updatedDeletedTasks);
+
+  // Add back to active tasks
+  const { deletedAt, ...restoredTask } = taskToRestore;
+  const tasks = getTasks();
+  tasks.push(restoredTask);
+  saveTasks(tasks);
+
+  return restoredTask;
+}
+
+export function permanentlyDeleteTask(id: number) {
+  const deletedTasks = getDeletedTasks();
+  const filtered = deletedTasks.filter(t => t.id !== id);
+  saveDeletedTasks(filtered);
 }
 
 export function importTasks(newTasks: Task[]) {
