@@ -59,10 +59,13 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client
   const port = 5000;
+  // Check if running locally or in Replit
+  const isReplit = process.env.REPL_ID !== undefined;
+  
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host: isReplit ? "0.0.0.0" : "127.0.0.1",
+    reusePort: isReplit ? true : false,
   }, () => {
     log(`serving on port ${port}`);
   });
