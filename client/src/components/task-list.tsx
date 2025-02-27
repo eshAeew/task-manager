@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, RefreshCw } from "lucide-react";
+import { format } from "date-fns";
 
 interface TaskListProps {
   tasks: Task[];
@@ -29,6 +30,19 @@ export function TaskList({ tasks, onToggleComplete, onDelete }: TaskListProps) {
     }
   };
 
+  const getRecurrenceText = (task: Task) => {
+    if (!task.recurrence || task.recurrence === "none") return null;
+
+    const recurrenceMap = {
+      daily: "Repeats daily",
+      weekly: "Repeats weekly",
+      monthly: "Repeats monthly",
+      custom: `Repeats every ${task.recurrenceInterval}`,
+    };
+
+    return recurrenceMap[task.recurrence];
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -49,8 +63,8 @@ export function TaskList({ tasks, onToggleComplete, onDelete }: TaskListProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         {filteredTasks.map(task => (
-          <div key={task.id} className="flex items-center justify-between p-4 rounded-lg border">
-            <div className="flex items-center gap-4">
+          <div key={task.id} className="flex items-start justify-between p-4 rounded-lg border">
+            <div className="flex items-start gap-4">
               <Checkbox
                 checked={task.completed}
                 onCheckedChange={() => onToggleComplete(task.id)}
@@ -59,9 +73,22 @@ export function TaskList({ tasks, onToggleComplete, onDelete }: TaskListProps) {
                 <p className={`font-medium ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
                   {task.title}
                 </p>
-                <span className={`text-xs px-2 py-1 rounded-full ${priorityBadgeColor(task.priority)}`}>
-                  {task.priority}
-                </span>
+                <div className="flex gap-2 mt-1">
+                  <span className={`text-xs px-2 py-1 rounded-full ${priorityBadgeColor(task.priority)}`}>
+                    {task.priority}
+                  </span>
+                  {task.recurrence !== "none" && (
+                    <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 flex items-center gap-1">
+                      <RefreshCw className="h-3 w-3" />
+                      {getRecurrenceText(task)}
+                    </span>
+                  )}
+                </div>
+                {task.nextDue && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Next due: {format(task.nextDue, "PPP")}
+                  </p>
+                )}
               </div>
             </div>
             <Button variant="ghost" size="icon" onClick={() => onDelete(task.id)}>
