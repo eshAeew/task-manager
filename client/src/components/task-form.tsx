@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InsertTask, insertTaskSchema, recurrenceOptions, categoryOptions } from "@shared/schema";
@@ -6,12 +7,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useState, useEffect } from "react";
-import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Paperclip, FileText } from "lucide-react";
+import { CalendarIcon, Paperclip, FileText, X } from "lucide-react";
 import { suggestTaskPriority } from "@/lib/task-analyzer";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,6 +22,7 @@ interface TaskFormProps {
 
 export const TaskForm = ({ onSubmit, defaultValues }: TaskFormProps) => {
   const [showCustomInterval, setShowCustomInterval] = useState(false);
+  const [tagInput, setTagInput] = useState("");
   const { toast } = useToast();
 
   const form = useForm<InsertTask>({
@@ -33,18 +34,32 @@ export const TaskForm = ({ onSubmit, defaultValues }: TaskFormProps) => {
       recurrence: "none",
       reminderEnabled: false,
       status: "todo",
+      tags: [],
       ...defaultValues,
     },
   });
 
   // Watch title changes to suggest priority
   const title = form.watch("title");
-  useEffect(() => {
-    if (title && !form.getValues("priority")) {
-      const suggestedPriority = suggestTaskPriority(title);
-      form.setValue("priority", suggestedPriority);
+  const tags = form.watch("tags") || [];
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
+      e.preventDefault();
+      const newTag = tagInput.trim().toLowerCase();
+      if (!tags.includes(newTag)) {
+        form.setValue("tags", [...tags, newTag]);
+      }
+      setTagInput("");
     }
-  }, [title, form]);
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    form.setValue(
+      "tags",
+      tags.filter((tag) => tag !== tagToRemove)
+    );
+  };
 
   const handleRecurrenceChange = (value: string) => {
     form.setValue("recurrence", value as InsertTask["recurrence"]);
@@ -171,22 +186,37 @@ export const TaskForm = ({ onSubmit, defaultValues }: TaskFormProps) => {
         <FormField
           control={form.control}
           name="tags"
-          render={({ field }) => (
+          render={() => (
             <FormItem>
               <FormLabel>Tags</FormLabel>
               <FormControl>
                 <div className="space-y-2">
                   <Input
-                    placeholder="Add tags (comma separated)"
-                    value={field.value?.join(", ") || ""}
-                    onChange={(e) => {
-                      const tags = e.target.value
-                        .split(",")
-                        .map((tag) => tag.trim())
-                        .filter(Boolean);
-                      field.onChange(tags);
-                    }}
+                    placeholder="Type a tag and press Enter or comma"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagKeyDown}
                   />
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                      >
+                        {tag}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-4 w-4 p-0 hover:bg-transparent"
+                          onClick={() => removeTag(tag)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               </FormControl>
               <FormMessage />
