@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Timer, Pause, Play, Settings } from "lucide-react";
@@ -23,7 +23,11 @@ function loadSettings(): TimerSettings {
   const stored = localStorage.getItem('pomodoroSettings');
   if (!stored) return DEFAULT_SETTINGS;
   try {
-    return JSON.parse(stored);
+    const parsed = JSON.parse(stored);
+    return {
+      workMinutes: Math.max(1, Math.min(60, parsed.workMinutes || DEFAULT_SETTINGS.workMinutes)),
+      breakMinutes: Math.max(1, Math.min(30, parsed.breakMinutes || DEFAULT_SETTINGS.breakMinutes))
+    };
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -39,6 +43,10 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
 
   const currentTotalTime = isBreak ? settings.breakMinutes * 60 : settings.workMinutes * 60;
 
+  const calculateProgress = useCallback((timeLeft: number, totalTime: number) => {
+    return ((totalTime - timeLeft) / totalTime) * 100;
+  }, []);
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
@@ -46,23 +54,24 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
       interval = setInterval(() => {
         setTimeLeft((prev) => {
           const newTime = prev - 1;
-          setProgress((newTime / currentTotalTime) * 100);
+          setProgress(calculateProgress(newTime, currentTotalTime));
           return newTime;
         });
       }, 1000);
     } else if (timeLeft === 0) {
       // Session completed
+      setIsRunning(false); // Pause before transitioning
+
       if (isBreak) {
         // Break finished, start work session
         setIsBreak(false);
         setTimeLeft(settings.workMinutes * 60);
-        setProgress(100);
       } else {
         // Work finished, start break
         setIsBreak(true);
         setTimeLeft(settings.breakMinutes * 60);
-        setProgress(100);
       }
+      setProgress(0);
 
       // Show notification
       if (Notification.permission === "granted") {
@@ -77,8 +86,12 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
       }
     }
 
-    return () => clearInterval(interval);
-  }, [isRunning, timeLeft, isBreak, taskTitle, settings, currentTotalTime]);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isRunning, timeLeft, isBreak, taskTitle, settings, currentTotalTime, calculateProgress]);
 
   const toggleTimer = () => {
     if (!isRunning && Notification.permission === "default") {
@@ -101,8 +114,12 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
   };
 
   const handleSettingsSave = (newSettings: TimerSettings) => {
-    setSettings(newSettings);
-    localStorage.setItem('pomodoroSettings', JSON.stringify(newSettings));
+    const validatedSettings = {
+      workMinutes: Math.max(1, Math.min(60, newSettings.workMinutes)),
+      breakMinutes: Math.max(1, Math.min(30, newSettings.breakMinutes))
+    };
+    setSettings(validatedSettings);
+    localStorage.setItem('pomodoroSettings', JSON.stringify(validatedSettings));
     setShowSettings(false);
     resetTimer();
   };
@@ -120,6 +137,7 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
           variant="ghost"
           size="icon"
           onClick={() => setShowSettings(!showSettings)}
+          disabled={isRunning}
         >
           <Settings className="h-4 w-4" />
         </Button>
