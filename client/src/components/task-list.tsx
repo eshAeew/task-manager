@@ -145,6 +145,19 @@ export function TaskList({
     event.target.value = '';
   };
 
+  const handleToggleComplete = (taskId: number) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task?.reminderEnabled) {
+      if (Notification.permission === "granted") {
+        new Notification(`Task ${task.completed ? 'Uncompleted' : 'Completed'}!`, {
+          body: `Task "${task.title}" has been ${task.completed ? 'uncompleted' : 'completed'}.`,
+          icon: "/favicon.ico"
+        });
+      }
+    }
+    onToggleComplete(taskId);
+  };
+
   if (view === "kanban") {
     return (
       <Card>
@@ -265,7 +278,7 @@ export function TaskList({
               <div className="flex items-start gap-4">
                 <Checkbox
                   checked={task.completed}
-                  onCheckedChange={() => onToggleComplete(task.id)}
+                  onCheckedChange={() => handleToggleComplete(task.id)}
                 />
                 <div>
                   <p className={`font-medium ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
