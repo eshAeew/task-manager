@@ -12,7 +12,7 @@ export default function Support() {
         <CardContent className="space-y-6">
           <div className="flex justify-center">
             <img
-              src="/attached_assets/cef6a572-7e45-490e-93da-fac9c29089eb.jpg"
+              src="https://media-hosting.imagekit.io//cd4b66324346476d/cef6a572-7e45-490e-93da-fac9c29089eb.jpg?Expires=1835367367&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=3Pk57DfF6hCTHC9Z32-gA46yTXKhKwh5i42RF6BXKelljgZp7i8oGZ89B1EYZhhMVVdQEqogw321tZgh~zyoh9QimzUU8HK6Hka~zlfLhYPfOtkYaGqmPp4w0GGMHgfeT5bnAAnvsz4kH6Rm3VqgqcwZhXCDwQTBrYuaYW52XTk3Uqib099joM11WpQA3IxFotKMQBB4i5icrYom-JUVf36n69EukHtYyJURycdnC-VtHoT~R~vYHRXM70jZxPKTIMshW4TA1PLzumjcEmj5paM~UvvNeCsDdSiKeroDGSyG5UdhAtGmaW3hzYu9YyYY9doJcXKLpHYyC3S77gcnLA__"
               alt="Support QR Code"
               className="max-w-[200px] rounded-lg shadow-lg"
             />
