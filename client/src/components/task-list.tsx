@@ -11,6 +11,8 @@ import { TaskTimer } from "./task-timer";
 import { useToast } from "@/hooks/use-toast";
 import { getTasks, importTasks } from "@/lib/tasks";
 import { KanbanBoard } from "./kanban-board";
+import { TaskSearch } from "./task-search";
+import { categoryIcons } from "@shared/schema";
 
 interface TaskListProps {
   tasks: Task[];
@@ -39,9 +41,11 @@ export function TaskList({
 }: TaskListProps) {
   const [filter, setFilter] = useState<string>("all");
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const { toast } = useToast();
 
-  // Check for tasks that need reminders
   useEffect(() => {
     const checkReminders = () => {
       const now = new Date();
@@ -67,8 +71,12 @@ export function TaskList({
   }, [tasks]);
 
   const filteredTasks = tasks.filter(task => {
-    if (filter === "all") return true;
-    return task.priority === filter;
+    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPriority = filter === "all" || task.priority === filter;
+    const matchesCategory = selectedCategory === "all" || task.category === selectedCategory;
+    const matchesTags = selectedTags.length === 0 ||
+      (task.tags && selectedTags.every(tag => task.tags.includes(tag)));
+    return matchesSearch && matchesPriority && matchesCategory && matchesTags;
   });
 
   const priorityBadgeColor = (priority: string) => {
@@ -244,6 +252,13 @@ export function TaskList({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        <TaskSearch
+          onSearch={setSearchTerm}
+          onCategoryChange={setSelectedCategory}
+          onTagAdd={(tag) => setSelectedTags(prev => [...prev, tag])}
+          onTagRemove={(tag) => setSelectedTags(prev => prev.filter(t => t !== tag))}
+          tags={selectedTags}
+        />
         {filteredTasks.map(task => (
           <div key={task.id} className="flex flex-col p-4 rounded-lg border">
             <div className="flex items-start justify-between">
@@ -260,6 +275,17 @@ export function TaskList({
                     <span className={`text-xs px-2 py-1 rounded-full ${priorityBadgeColor(task.priority)}`}>
                       {task.priority}
                     </span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground">
+                      {categoryIcons[task.category]} {task.category}
+                    </span>
+                    {task.tags?.map(tag => (
+                      <span
+                        key={tag}
+                        className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
                     {task.recurrence !== "none" && (
                       <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 flex items-center gap-1">
                         <RefreshCw className="h-3 w-3" />

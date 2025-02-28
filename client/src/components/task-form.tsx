@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { InsertTask, insertTaskSchema, recurrenceOptions } from "@shared/schema";
+import { InsertTask, insertTaskSchema, recurrenceOptions, categoryOptions } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -136,6 +136,59 @@ export const TaskForm = ({ onSubmit, defaultValues }: TaskFormProps) => {
                   <SelectItem value="high">High</SelectItem>
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {categoryOptions.map((category) => (
+                    <SelectItem key={category.value} value={category.value}>
+                      <span className="flex items-center gap-2">
+                        {category.icon} {category.label}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="tags"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tags</FormLabel>
+              <FormControl>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Add tags (comma separated)"
+                    value={field.value?.join(", ") || ""}
+                    onChange={(e) => {
+                      const tags = e.target.value
+                        .split(",")
+                        .map((tag) => tag.trim())
+                        .filter(Boolean);
+                      field.onChange(tags);
+                    }}
+                  />
+                </div>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

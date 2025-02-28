@@ -9,17 +9,22 @@ export const tasks = pgTable("tasks", {
   completed: boolean("completed").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   // Add time tracking
-  timeSpent: integer("time_spent").default(0), // Time spent in seconds
-  lastStarted: timestamp("last_started"), // When timer was last started
+  timeSpent: integer("time_spent").default(0),
+  lastStarted: timestamp("last_started"),
   // Add gamification
   xpEarned: integer("xp_earned").default(0),
   // Add status for Kanban
   status: text("status", { 
     enum: ["todo", "in_progress", "done"] 
   }).notNull().default("todo"),
+  // Add categories and tags
+  category: text("category", {
+    enum: ["work", "personal", "study", "shopping", "health", "other"]
+  }).notNull().default("other"),
+  tags: text("tags").array(),
   // Add file attachment
   attachmentUrl: text("attachment_url"),
-  attachmentName: text("attachment_name"), // Added field for attachment name
+  attachmentName: text("attachment_name"),
   // Existing fields...
   recurrence: text("recurrence", { 
     enum: ["none", "daily", "weekly", "monthly", "custom"] 
@@ -44,8 +49,10 @@ export const insertTaskSchema = createInsertSchema(tasks)
     reminderEnabled: true,
     reminderTime: true,
     status: true,
+    category: true,
+    tags: true,
     attachmentUrl: true,
-    attachmentName: true, // Added to schema
+    attachmentName: true,
     timeSpent: true,
     lastStarted: true,
     xpEarned: true,
@@ -60,8 +67,10 @@ export const insertTaskSchema = createInsertSchema(tasks)
     reminderEnabled: z.boolean().default(false),
     reminderTime: z.date().optional(),
     status: z.enum(["todo", "in_progress", "done"]).default("todo"),
+    category: z.enum(["work", "personal", "study", "shopping", "health", "other"]).default("other"),
+    tags: z.array(z.string()).optional(),
     attachmentUrl: z.string().optional(),
-    attachmentName: z.string().optional(), // Added validation
+    attachmentName: z.string().optional(),
     timeSpent: z.number().int().default(0),
     lastStarted: z.date().optional(),
     xpEarned: z.number().int().default(0),
@@ -70,7 +79,25 @@ export const insertTaskSchema = createInsertSchema(tasks)
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type Task = typeof tasks.$inferSelect;
 
-// Gamification configs
+// Categories and their icons
+export const categoryIcons = {
+  work: "💼",
+  personal: "👤",
+  study: "📚",
+  shopping: "🛒",
+  health: "🏥",
+  other: "📌",
+} as const;
+
+export const categoryOptions = [
+  { value: "work", label: "Work", icon: categoryIcons.work },
+  { value: "personal", label: "Personal", icon: categoryIcons.personal },
+  { value: "study", label: "Study", icon: categoryIcons.study },
+  { value: "shopping", label: "Shopping", icon: categoryIcons.shopping },
+  { value: "health", label: "Health", icon: categoryIcons.health },
+  { value: "other", label: "Other", icon: categoryIcons.other },
+] as const;
+
 export const XP_REWARDS = {
   TASK_COMPLETE: 10,
   HIGH_PRIORITY_BONUS: 5,
