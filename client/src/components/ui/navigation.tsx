@@ -6,7 +6,7 @@ export function Navigation() {
   const [location] = useLocation();
 
   return (
-    <nav className="fixed bottom-4 right-4 flex gap-2">
+    <nav className="fixed bottom-4 right-4 flex gap-2 z-10">
       <Button
         variant={location === "/" ? "default" : "outline"}
         size="icon"

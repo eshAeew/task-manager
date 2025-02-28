@@ -48,10 +48,11 @@ export function FloatingActionButton({ onAddTask }: FloatingActionButtonProps) {
   return (
     <>
       <Button
-        className="fixed bottom-4 right-4 h-10 w-10"
+        className="fixed bottom-16 right-4 z-20 px-4 gap-2"
         onClick={() => setOpen(true)}
       >
         <Plus className="h-4 w-4" />
+        Add Task
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
