@@ -48,10 +48,10 @@ export function FloatingActionButton({ onAddTask }: FloatingActionButtonProps) {
   return (
     <>
       <Button
-        className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg"
+        className="fixed bottom-4 right-4 h-10 w-10"
         onClick={() => setOpen(true)}
       >
-        <Plus className="h-6 w-6" />
+        <Plus className="h-4 w-4" />
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -94,6 +94,32 @@ export function FloatingActionButton({ onAddTask }: FloatingActionButtonProps) {
                         <SelectItem value="low">Low</SelectItem>
                         <SelectItem value="medium">Medium</SelectItem>
                         <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="work">💼 Work</SelectItem>
+                        <SelectItem value="personal">👤 Personal</SelectItem>
+                        <SelectItem value="study">📚 Study</SelectItem>
+                        <SelectItem value="shopping">🛒 Shopping</SelectItem>
+                        <SelectItem value="health">🏥 Health</SelectItem>
+                        <SelectItem value="other">📌 Other</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>
