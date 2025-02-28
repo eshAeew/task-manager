@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon, Paperclip, FileText, X } from "lucide-react";
 import { suggestTaskPriority } from "@/lib/task-analyzer";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 interface TaskFormProps {
   onSubmit: (data: InsertTask) => void;
