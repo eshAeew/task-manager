@@ -40,16 +40,66 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
   const [isRunning, setIsRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isCountingDown, setIsCountingDown] = useState(false);
+  const [countdownValue, setCountdownValue] = useState(5);
 
   // Refs for tracking actual time
   const startTimeRef = useRef<number | null>(null);
-  const lastTickRef = useRef<number | null>(null);
+  const speechSynthesisRef = useRef<SpeechSynthesis>(window.speechSynthesis);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentTotalTime = isBreak ? settings.breakMinutes * 60 : settings.workMinutes * 60;
 
   const calculateProgress = useCallback((timeLeft: number, totalTime: number) => {
     return ((totalTime - timeLeft) / totalTime) * 100;
   }, []);
+
+  const announceCountdown = useCallback((number: number) => {
+    const utterance = new SpeechSynthesisUtterance(number.toString());
+    utterance.rate = 1;
+    utterance.pitch = 1.2;
+    utterance.volume = 1;
+    // Try to use a female voice if available
+    const voices = speechSynthesisRef.current.getVoices();
+    const femaleVoice = voices.find(voice => voice.name.toLowerCase().includes('female'));
+    if (femaleVoice) {
+      utterance.voice = femaleVoice;
+    }
+    speechSynthesisRef.current.speak(utterance);
+  }, []);
+
+  const startBreakCountdown = useCallback(() => {
+    setIsCountingDown(true);
+    setCountdownValue(5);
+
+    // Announce break duration
+    const breakAnnouncement = new SpeechSynthesisUtterance(
+      `Break time starts in 5 seconds. You will have ${settings.breakMinutes} minutes to rest.`
+    );
+    speechSynthesisRef.current.speak(breakAnnouncement);
+
+    countdownIntervalRef.current = setInterval(() => {
+      setCountdownValue((prev) => {
+        const newValue = prev - 1;
+        if (newValue > 0) {
+          announceCountdown(newValue);
+        } else {
+          // Clear interval when countdown reaches 0
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+          }
+          // Start break session
+          setIsCountingDown(false);
+          setIsBreak(true);
+          setTimeLeft(settings.breakMinutes * 60);
+          setProgress(0);
+          startTimeRef.current = Date.now();
+          setIsRunning(true);
+        }
+        return newValue;
+      });
+    }, 1000);
+  }, [settings.breakMinutes, announceCountdown]);
 
   useEffect(() => {
     let animationFrameId: number;
@@ -89,11 +139,10 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
         if (isBreak) {
           setIsBreak(false);
           setTimeLeft(settings.workMinutes * 60);
+          setProgress(0);
         } else {
-          setIsBreak(true);
-          setTimeLeft(settings.breakMinutes * 60);
+          startBreakCountdown(); // Start countdown before break
         }
-        setProgress(0);
       }
     };
 
@@ -108,8 +157,12 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
       }
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
+      speechSynthesisRef.current.cancel(); // Cancel any ongoing speech
     };
-  }, [isRunning, timeLeft, isBreak, taskTitle, settings, currentTotalTime, calculateProgress]);
+  }, [isRunning, timeLeft, isBreak, taskTitle, settings, currentTotalTime, calculateProgress, startBreakCountdown]);
 
   const toggleTimer = () => {
     if (!isRunning && Notification.permission === "default") {
@@ -131,6 +184,11 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
     setTimeLeft(settings.workMinutes * 60);
     setProgress(0);
     startTimeRef.current = null;
+    setIsCountingDown(false);
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+    }
+    speechSynthesisRef.current.cancel();
   };
 
   const formatTime = (seconds: number) => {
@@ -156,14 +214,14 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
         <div className="flex items-center gap-2">
           <Timer className="h-4 w-4" />
           <span className="text-sm font-medium">
-            {isBreak ? "Break Time" : "Work Session"}
+            {isCountingDown ? "Starting Break..." : isBreak ? "Break Time" : "Work Session"}
           </span>
         </div>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setShowSettings(!showSettings)}
-          disabled={isRunning}
+          disabled={isRunning || isCountingDown}
         >
           <Settings className="h-4 w-4" />
         </Button>
@@ -218,7 +276,7 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
           <Progress value={progress} className="h-2" />
           <div className="flex items-center justify-between">
             <span className="text-2xl font-bold font-mono">
-              {formatTime(timeLeft)}
+              {isCountingDown ? countdownValue : formatTime(timeLeft)}
             </span>
             <div className="space-x-2">
               <Button
@@ -226,6 +284,7 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
                 size="sm"
                 onClick={toggleTimer}
                 className="w-20"
+                disabled={isCountingDown}
               >
                 {isRunning ? (
                   <>
@@ -241,7 +300,7 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
                 variant="outline"
                 size="sm"
                 onClick={resetTimer}
-                disabled={!isRunning && timeLeft === settings.workMinutes * 60}
+                disabled={(!isRunning && timeLeft === settings.workMinutes * 60) || isCountingDown}
               >
                 Reset
               </Button>
