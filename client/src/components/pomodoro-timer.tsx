@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Timer, Pause, Play, Settings } from "lucide-react";
@@ -41,6 +41,10 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
   const [isBreak, setIsBreak] = useState(false);
   const [progress, setProgress] = useState(0);
 
+  // Refs for tracking actual time
+  const startTimeRef = useRef<number | null>(null);
+  const lastTickRef = useRef<number | null>(null);
+
   const currentTotalTime = isBreak ? settings.breakMinutes * 60 : settings.workMinutes * 60;
 
   const calculateProgress = useCallback((timeLeft: number, totalTime: number) => {
@@ -48,47 +52,61 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
   }, []);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let animationFrameId: number;
 
-    if (isRunning && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prev) => {
-          const newTime = prev - 1;
-          setProgress(calculateProgress(newTime, currentTotalTime));
-          return newTime;
-        });
-      }, 1000);
-    } else if (timeLeft === 0) {
-      // Session completed
-      setIsRunning(false); // Pause before transitioning
+    const updateTimer = () => {
+      if (!isRunning || !startTimeRef.current || timeLeft <= 0) return;
 
-      if (isBreak) {
-        // Break finished, start work session
-        setIsBreak(false);
-        setTimeLeft(settings.workMinutes * 60);
+      const now = Date.now();
+      const elapsed = Math.floor((now - startTimeRef.current) / 1000);
+      const newTimeLeft = Math.max(currentTotalTime - elapsed, 0);
+
+      if (newTimeLeft !== timeLeft) {
+        setTimeLeft(newTimeLeft);
+        setProgress(calculateProgress(newTimeLeft, currentTotalTime));
+      }
+
+      if (newTimeLeft > 0) {
+        animationFrameId = requestAnimationFrame(updateTimer);
       } else {
-        // Work finished, start break
-        setIsBreak(true);
-        setTimeLeft(settings.breakMinutes * 60);
-      }
-      setProgress(0);
+        // Session completed
+        setIsRunning(false);
+        startTimeRef.current = null;
 
-      // Show notification
-      if (Notification.permission === "granted") {
-        new Notification(
-          isBreak ? "Break Finished!" : "Work Session Complete!",
-          {
-            body: isBreak
-              ? "Time to get back to work!"
-              : `Great job working on "${taskTitle}"! Take a short break.`,
-          }
-        );
+        // Show notification
+        if (Notification.permission === "granted") {
+          new Notification(
+            isBreak ? "Break Finished!" : "Work Session Complete!",
+            {
+              body: isBreak
+                ? "Time to get back to work!"
+                : `Great job working on "${taskTitle}"! Take a short break.`,
+            }
+          );
+        }
+
+        // Switch sessions
+        if (isBreak) {
+          setIsBreak(false);
+          setTimeLeft(settings.workMinutes * 60);
+        } else {
+          setIsBreak(true);
+          setTimeLeft(settings.breakMinutes * 60);
+        }
+        setProgress(0);
       }
+    };
+
+    if (isRunning) {
+      if (!startTimeRef.current) {
+        startTimeRef.current = Date.now() - ((currentTotalTime - timeLeft) * 1000);
+      }
+      animationFrameId = requestAnimationFrame(updateTimer);
     }
 
     return () => {
-      if (interval) {
-        clearInterval(interval);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
       }
     };
   }, [isRunning, timeLeft, isBreak, taskTitle, settings, currentTotalTime, calculateProgress]);
@@ -96,6 +114,13 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
   const toggleTimer = () => {
     if (!isRunning && Notification.permission === "default") {
       Notification.requestPermission();
+    }
+    if (!isRunning) {
+      // Starting timer
+      startTimeRef.current = Date.now() - ((currentTotalTime - timeLeft) * 1000);
+    } else {
+      // Pausing timer
+      startTimeRef.current = null;
     }
     setIsRunning(!isRunning);
   };
@@ -105,6 +130,7 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
     setIsBreak(false);
     setTimeLeft(settings.workMinutes * 60);
     setProgress(0);
+    startTimeRef.current = null;
   };
 
   const formatTime = (seconds: number) => {
