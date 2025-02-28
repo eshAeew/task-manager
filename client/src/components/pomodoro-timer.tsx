@@ -40,28 +40,17 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
   const currentTotalTime = isBreak ? settings.breakMinutes * 60 : settings.workMinutes * 60;
 
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-    let startTime: number;
-    let remainingTime = timeLeft;
+    let interval: NodeJS.Timeout;
 
-    const updateTimer = () => {
-      if (!isRunning || remainingTime <= 0) return;
-      
-      const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-      const newTimeLeft = Math.max(0, remainingTime - elapsedSeconds);
-      
-      if (newTimeLeft !== timeLeft) {
-        setTimeLeft(newTimeLeft);
-        setProgress((newTimeLeft / currentTotalTime) * 100);
-      }
-      
-      if (newTimeLeft <= 0) {
-        clearInterval(intervalId);
-        handleTimerComplete();
-      }
-    };
-    
-    const handleTimerComplete = () => {
+    if (isRunning && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => {
+          const newTime = prev - 1;
+          setProgress((newTime / currentTotalTime) * 100);
+          return newTime;
+        });
+      }, 1000);
+    } else if (timeLeft === 0) {
       // Session completed
       if (isBreak) {
         // Break finished, start work session
@@ -74,20 +63,6 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
         setTimeLeft(settings.breakMinutes * 60);
         setProgress(100);
       }
-    };
-
-    if (isRunning && timeLeft > 0) {
-      startTime = Date.now();
-      remainingTime = timeLeft;
-      intervalId = setInterval(updateTimer, 100); // Update more frequently for smoother UI
-    } else if (timeLeft === 0) {
-      handleTimerComplete();
-    }
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [isRunning, timeLeft === 0, isBreak, settings, currentTotalTime]);
 
       // Show notification
       if (Notification.permission === "granted") {
