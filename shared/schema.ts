@@ -19,6 +19,7 @@ export const tasks = pgTable("tasks", {
   }).notNull().default("todo"),
   // Add file attachment
   attachmentUrl: text("attachment_url"),
+  attachmentName: text("attachment_name"), // Added field for attachment name
   // Existing fields...
   recurrence: text("recurrence", { 
     enum: ["none", "daily", "weekly", "monthly", "custom"] 
@@ -44,6 +45,7 @@ export const insertTaskSchema = createInsertSchema(tasks)
     reminderTime: true,
     status: true,
     attachmentUrl: true,
+    attachmentName: true, // Added to schema
     timeSpent: true,
     lastStarted: true,
     xpEarned: true,
@@ -59,6 +61,7 @@ export const insertTaskSchema = createInsertSchema(tasks)
     reminderTime: z.date().optional(),
     status: z.enum(["todo", "in_progress", "done"]).default("todo"),
     attachmentUrl: z.string().optional(),
+    attachmentName: z.string().optional(), // Added validation
     timeSpent: z.number().int().default(0),
     lastStarted: z.date().optional(),
     xpEarned: z.number().int().default(0),

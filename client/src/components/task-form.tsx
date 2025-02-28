@@ -11,7 +11,7 @@ import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Paperclip } from "lucide-react";
+import { CalendarIcon, Paperclip, FileText } from "lucide-react";
 import { suggestTaskPriority } from "@/lib/task-analyzer";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,7 +20,7 @@ interface TaskFormProps {
   defaultValues?: Partial<InsertTask>;
 }
 
-export function TaskForm({ onSubmit, defaultValues }: TaskFormProps) {
+export const TaskForm = ({ onSubmit, defaultValues }: TaskFormProps) => {
   const [showCustomInterval, setShowCustomInterval] = useState(false);
   const { toast } = useToast();
 
@@ -84,6 +84,7 @@ export function TaskForm({ onSubmit, defaultValues }: TaskFormProps) {
       });
 
       form.setValue("attachmentUrl", base64);
+      form.setValue("attachmentName", file.name);
       toast({
         title: "File attached",
         description: "The file has been attached to the task",
@@ -96,6 +97,9 @@ export function TaskForm({ onSubmit, defaultValues }: TaskFormProps) {
       });
     }
   };
+
+  const attachmentUrl = form.watch("attachmentUrl");
+  const attachmentName = form.watch("attachmentName");
 
   return (
     <Form {...form}>
@@ -144,21 +148,54 @@ export function TaskForm({ onSubmit, defaultValues }: TaskFormProps) {
             <FormItem>
               <FormLabel>Attachment</FormLabel>
               <FormControl>
-                <div className="relative">
-                  <input
-                    type="file"
-                    onChange={handleFileChange}
-                    accept="image/*,.pdf,.doc,.docx"
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full flex items-center gap-2"
-                  >
-                    <Paperclip className="h-4 w-4" />
-                    Add Attachment
-                  </Button>
+                <div className="space-y-2">
+                  <div className="relative">
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      accept="image/*,.pdf,.doc,.docx"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full flex items-center gap-2"
+                    >
+                      <Paperclip className="h-4 w-4" />
+                      {attachmentUrl ? "Change Attachment" : "Add Attachment"}
+                    </Button>
+                  </div>
+
+                  {attachmentUrl && (
+                    <div className="border rounded-lg p-3 space-y-2">
+                      {attachmentUrl.startsWith('data:image/') ? (
+                        <div className="relative aspect-video">
+                          <img
+                            src={attachmentUrl}
+                            alt="Attachment preview"
+                            className="rounded object-contain w-full h-full"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <FileText className="h-4 w-4" />
+                          {attachmentName}
+                        </div>
+                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => {
+                          form.setValue("attachmentUrl", "");
+                          form.setValue("attachmentName", "");
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </FormControl>
               <FormMessage />
@@ -316,4 +353,6 @@ export function TaskForm({ onSubmit, defaultValues }: TaskFormProps) {
       </form>
     </Form>
   );
-}
+};
+
+export default TaskForm;
