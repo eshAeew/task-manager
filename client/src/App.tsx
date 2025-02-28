@@ -7,7 +7,7 @@ import { FloatingActionButton } from "@/components/floating-action-button";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Support from "@/pages/support";
-import { InsertTask } from "@shared/schema";
+import { InsertTask, Task } from "@shared/schema";
 import { addTask } from "@/lib/tasks";
 
 function Router() {
@@ -22,8 +22,15 @@ function Router() {
 
 function App() {
   const handleAddTask = (task: InsertTask) => {
-    addTask(task);
-    // Invalidate and refetch tasks query
+    // Add the task to local storage
+    const newTask = addTask(task);
+
+    // Optimistically update the cache
+    queryClient.setQueryData<Task[]>(["/api/tasks"], (oldTasks = []) => {
+      return [...oldTasks, newTask];
+    });
+
+    // Invalidate and refetch in the background
     queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
   };
 

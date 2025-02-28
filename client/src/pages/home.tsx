@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/task-list";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -11,17 +12,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { suggestTaskPriority } from "@/lib/task-analyzer";
 
 export default function Home() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const queryClient = useQueryClient();
   const [view, setView] = useState<"list" | "kanban">("list");
   const [isFocusMode, setIsFocusMode] = useState(false);
 
-  useEffect(() => {
-    setTasks(getTasks());
-  }, []);
+  const { data: tasks = [], refetch } = useQuery({
+    queryKey: ["/api/tasks"],
+    queryFn: getTasks,
+  });
 
   const handleAddTask = (data: InsertTask) => {
     const newTask = addTask(data);
-    setTasks(prev => [...prev, newTask]);
+    queryClient.setQueryData<Task[]>(["/api/tasks"], (oldTasks) => {
+      return [...(oldTasks || []), newTask];
+    });
   };
 
   const handleVoiceInput = (transcript: string) => {
@@ -45,34 +49,44 @@ export default function Home() {
       status: !task.completed ? "done" : task.status 
     });
     if (updated) {
-      setTasks(prev => prev.map(t => t.id === id ? updated : t));
+      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
+        prev?.map(t => t.id === id ? updated : t) || []
+      );
     }
   };
 
   const handleUpdateStatus = (id: number, status: Task["status"]) => {
     const updated = updateTask(id, { status });
     if (updated) {
-      setTasks(prev => prev.map(t => t.id === id ? updated : t));
+      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
+        prev?.map(t => t.id === id ? updated : t) || []
+      );
     }
   };
 
   const handleDeleteTask = (id: number) => {
     deleteTask(id);
-    setTasks(prev => prev.filter(t => t.id !== id));
+    queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
+      prev?.filter(t => t.id !== id) || []
+    );
   };
 
   const handleImportTasks = (importedTasks: Task[]) => {
-    setTasks(importedTasks);
+    queryClient.setQueryData<Task[]>(["/api/tasks"], importedTasks);
   };
 
   const handleRestoreTask = (task: Task) => {
-    setTasks(prev => [...prev, task]);
+    queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
+      [...(prev || []), task]
+    );
   };
 
   const handleTimeUpdate = (taskId: number, timeSpent: number) => {
     const updated = updateTask(taskId, { timeSpent });
     if (updated) {
-      setTasks(prev => prev.map(t => t.id === taskId ? updated : t));
+      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
+        prev?.map(t => t.id === taskId ? updated : t) || []
+      );
     }
   };
 
