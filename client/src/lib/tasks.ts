@@ -119,9 +119,15 @@ export function addTask(task: InsertTask): Task {
       createdAt: new Date(),
       lastCompleted: null,
     } as Task) : null,
-    dueDate: task.dueDate || null,
-    reminderTime: task.reminderTime || null,
+    dueDate: task.dueDate ? new Date(task.dueDate) : null,
+    reminderTime: task.reminderTime ? new Date(task.reminderTime) : null,
     recurrenceInterval: task.recurrenceInterval || null,
+    timeSpent: task.timeSpent || 0,
+    lastStarted: null,
+    xpEarned: task.xpEarned || 0,
+    tags: task.tags || [],
+    attachmentUrl: task.attachmentUrl || null,
+    attachmentName: task.attachmentName || null,
   };
   tasks.push(newTask);
   saveTasks(tasks);
