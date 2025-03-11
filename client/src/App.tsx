@@ -5,22 +5,39 @@ import { Toaster } from "@/components/ui/toaster";
 import Calendar from "@/pages/calendar";
 import NotFound from "@/pages/not-found";
 import { Button } from "@/components/ui/button";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Home as HomeIcon, LayoutDashboard, HelpCircle } from "lucide-react";
 import { InsertTask, Task } from "@shared/schema";
 import { addTask } from "@/lib/tasks";
 import Home from "@/pages/home";
 import Support from "@/pages/support";
-
 
 function Navigation() {
   return (
     <nav className="border-b">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center space-x-4">
+          <Link href="/">
+            <Button variant="ghost">
+              <HomeIcon className="mr-2 h-4 w-4" />
+              Home
+            </Button>
+          </Link>
+          <Link href="/dashboard">
+            <Button variant="ghost">
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              Dashboard
+            </Button>
+          </Link>
           <Link href="/calendar">
             <Button variant="ghost">
               <CalendarDays className="mr-2 h-4 w-4" />
               Calendar
+            </Button>
+          </Link>
+          <Link href="/support">
+            <Button variant="ghost">
+              <HelpCircle className="mr-2 h-4 w-4" />
+              Support
             </Button>
           </Link>
         </div>
@@ -32,12 +49,21 @@ function Navigation() {
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Calendar} />
+      <Route path="/" component={Home} />
       <Route path="/calendar" component={Calendar} />
-      <Route path="/support" component={Support}/>
-      <Route path="/" component={Home}/>
+      <Route path="/support" component={Support} />
       <Route component={NotFound} />
     </Switch>
+  );
+}
+
+function FloatingActionButton({ onAddTask }: { onAddTask: (task: InsertTask) => void }) {
+  return (
+    <div className="fixed bottom-6 right-6">
+      <Button onClick={() => onAddTask({ title: "New Task", priority: "medium" })}>
+        Add Task
+      </Button>
+    </div>
   );
 }
 
@@ -62,6 +88,7 @@ function App() {
         <main>
           <Router />
         </main>
+        <FloatingActionButton onAddTask={handleAddTask} />
       </div>
       <Toaster />
     </QueryClientProvider>
