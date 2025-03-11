@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Calendar from "@/pages/calendar";
 import NotFound from "@/pages/not-found";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Home as HomeIcon, LayoutDashboard, HelpCircle } from "lucide-react";
+import { CalendarDays, Home as HomeIcon, LayoutDashboard, HelpCircle, Plus } from "lucide-react";
 import { InsertTask, Task } from "@shared/schema";
 import { addTask } from "@/lib/tasks";
 import Home from "@/pages/home";
@@ -58,9 +58,27 @@ function Router() {
 }
 
 function FloatingActionButton({ onAddTask }: { onAddTask: (task: InsertTask) => void }) {
+  const handleClick = () => {
+    // Create a task with today's date as the due date
+    const task: InsertTask = {
+      title: "New Task",
+      priority: "medium",
+      status: "todo",
+      category: "other",
+      dueDate: new Date(),
+      timeSpent: 0,
+      xpEarned: 0,
+      completed: false,
+      reminderEnabled: false,
+      recurrence: "none"
+    };
+    onAddTask(task);
+  };
+
   return (
     <div className="fixed bottom-6 right-6">
-      <Button onClick={() => onAddTask({ title: "New Task", priority: "medium" })}>
+      <Button onClick={handleClick} size="lg">
+        <Plus className="h-5 w-5 mr-2" />
         Add Task
       </Button>
     </div>
