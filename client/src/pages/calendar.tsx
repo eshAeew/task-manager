@@ -8,6 +8,7 @@ import { Task } from "@shared/schema";
 import { format, isToday, isSameDay, addDays, subDays } from "date-fns";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { categoryIcons } from "@shared/schema";
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -101,28 +102,56 @@ export default function CalendarPage() {
                   {tasksForSelectedDate.map((task) => (
                     <div
                       key={task.id}
-                      className="flex items-start justify-between p-4 rounded-lg border"
+                      className="flex flex-col p-4 rounded-lg border space-y-3"
                     >
-                      <div className="space-y-1">
-                        <h3 className="font-medium">{task.title}</h3>
-                        {task.description && (
-                          <p className="text-sm text-muted-foreground">
-                            {task.description}
-                          </p>
-                        )}
+                      <div className="flex items-start justify-between">
+                        <h3 className="font-medium flex items-center gap-2">
+                          {task.title}
+                          {task.completed && (
+                            <Badge variant="success">Completed</Badge>
+                          )}
+                        </h3>
+                        <Badge className={
+                          task.priority === 'high' ? 'bg-red-500' :
+                          task.priority === 'medium' ? 'bg-yellow-500' :
+                          'bg-blue-500'
+                        }>
+                          {task.priority}
+                        </Badge>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
                         {task.category && (
-                          <Badge variant="outline" className="mt-2">
+                          <Badge variant="outline" className="flex items-center gap-1">
+                            <span>{categoryIcons[task.category as keyof typeof categoryIcons]}</span>
                             {task.category}
                           </Badge>
                         )}
+                        {task.tags && task.tags.map((tag) => (
+                          <Badge key={tag} variant="secondary">
+                            {tag}
+                          </Badge>
+                        ))}
                       </div>
-                      <Badge className={
-                        task.priority === 'high' ? 'bg-red-500' :
-                        task.priority === 'medium' ? 'bg-yellow-500' :
-                        'bg-blue-500'
-                      }>
-                        {task.priority}
-                      </Badge>
+
+                      {task.recurrence !== 'none' && (
+                        <div className="text-sm text-muted-foreground">
+                          Repeats: {task.recurrence}
+                          {task.recurrenceInterval && ` (${task.recurrenceInterval})`}
+                        </div>
+                      )}
+
+                      {task.reminderEnabled && task.reminderTime && (
+                        <div className="text-sm text-muted-foreground">
+                          Reminder: {format(new Date(task.reminderTime), 'PPp')}
+                        </div>
+                      )}
+
+                      {task.timeSpent > 0 && (
+                        <div className="text-sm text-muted-foreground">
+                          Time spent: {task.timeSpent} minutes
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

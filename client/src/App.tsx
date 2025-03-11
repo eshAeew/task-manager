@@ -10,6 +10,9 @@ import { InsertTask, Task } from "@shared/schema";
 import { addTask } from "@/lib/tasks";
 import Home from "@/pages/home";
 import Support from "@/pages/support";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { TaskForm } from "@/components/task-form";
+import { useState } from "react";
 
 function Navigation() {
   return (
@@ -58,30 +61,27 @@ function Router() {
 }
 
 function FloatingActionButton({ onAddTask }: { onAddTask: (task: InsertTask) => void }) {
-  const handleClick = () => {
-    // Create a task with today's date as the due date
-    const task: InsertTask = {
-      title: "New Task",
-      priority: "medium",
-      status: "todo",
-      category: "other",
-      dueDate: new Date(),
-      timeSpent: 0,
-      xpEarned: 0,
-      completed: false,
-      reminderEnabled: false,
-      recurrence: "none"
-    };
-    onAddTask(task);
-  };
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-6 right-6">
-      <Button onClick={handleClick} size="lg">
-        <Plus className="h-5 w-5 mr-2" />
-        Add Task
-      </Button>
-    </div>
+    <>
+      <div className="fixed bottom-6 right-6">
+        <Button onClick={() => setIsDialogOpen(true)} size="lg">
+          <Plus className="h-5 w-5 mr-2" />
+          Add Task
+        </Button>
+      </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogTitle>Add New Task</DialogTitle>
+          <TaskForm 
+            onSubmit={onAddTask}
+            onCancel={() => setIsDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

@@ -13,15 +13,18 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, Paperclip, FileText, X } from "lucide-react";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 interface TaskFormProps {
   onSubmit: (data: InsertTask) => void;
   defaultValues?: Partial<InsertTask>;
+  onCancel?: () => void;
 }
 
-export const TaskForm = ({ onSubmit, defaultValues }: TaskFormProps) => {
+export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) => {
   const [showCustomInterval, setShowCustomInterval] = useState(false);
   const [tagInput, setTagInput] = useState("");
+  const { toast } = useToast();
 
   const form = useForm<InsertTask>({
     resolver: zodResolver(insertTaskSchema),
@@ -76,12 +79,53 @@ export const TaskForm = ({ onSubmit, defaultValues }: TaskFormProps) => {
     }
   };
 
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (limit to 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select a file smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      form.setValue("attachmentUrl", base64);
+      form.setValue("attachmentName", file.name);
+      toast({
+        title: "File attached",
+        description: "The file has been attached to the task",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to attach file. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const attachmentUrl = form.watch("attachmentUrl");
+  const attachmentName = form.watch("attachmentName");
+
   const handleSubmit = (data: InsertTask) => {
     onSubmit({
       ...data,
       dueDate: data.dueDate || new Date(),
     });
     form.reset();
+    onCancel?.();
   };
 
   return (
@@ -146,6 +190,68 @@ export const TaskForm = ({ onSubmit, defaultValues }: TaskFormProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="attachmentUrl"
+          render={() => (
+            <FormItem>
+              <FormLabel>Attachment</FormLabel>
+              <FormControl>
+                <div className="space-y-2">
+                  <div className="relative">
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      accept="image/*,.pdf,.doc,.docx"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full flex items-center gap-2"
+                    >
+                      <Paperclip className="h-4 w-4" />
+                      {attachmentUrl ? "Change Attachment" : "Add Attachment"}
+                    </Button>
+                  </div>
+
+                  {attachmentUrl && (
+                    <div className="border rounded-lg p-3 space-y-2">
+                      {attachmentUrl.startsWith('data:image/') ? (
+                        <div className="relative aspect-video">
+                          <img
+                            src={attachmentUrl}
+                            alt="Attachment preview"
+                            className="rounded object-contain w-full h-full"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <FileText className="h-4 w-4" />
+                          {attachmentName}
+                        </div>
+                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => {
+                          form.setValue("attachmentUrl", "");
+                          form.setValue("attachmentName", "");
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -332,7 +438,14 @@ export const TaskForm = ({ onSubmit, defaultValues }: TaskFormProps) => {
           />
         )}
 
-        <Button type="submit">Add Task</Button>
+        <div className="flex justify-end gap-2">
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+          <Button type="submit">Add Task</Button>
+        </div>
       </form>
     </Form>
   );
