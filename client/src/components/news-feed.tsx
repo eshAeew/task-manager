@@ -1,24 +1,26 @@
 import { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  RefreshCw, 
-  ExternalLink, 
-  Clock, 
-  Newspaper, 
-  Filter, 
+import {
+  RefreshCw,
+  ExternalLink,
+  Clock,
+  Newspaper,
+  Filter,
   X,
-  ArrowUpRight 
+  ArrowUpRight,
+  Bookmark,
+  BookmarkCheck
 } from "lucide-react";
 import {
   Select,
@@ -28,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { queryClient } from "@/lib/queryClient";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 
 interface NewsItem {
   title?: string;
@@ -61,6 +64,11 @@ interface NewsSourcesResponse {
   categories: string[];
 }
 
+interface SavedArticle {
+  guid: string;
+  savedAt: string;
+}
+
 export function NewsFeed() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [sources, setSources] = useState<string[]>([]);
@@ -70,29 +78,28 @@ export function NewsFeed() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('all');
+  const [savedArticles, setSavedArticles] = useLocalStorage<SavedArticle[]>("saved-articles", []);
 
-  // Function to format date to relative time
   const formatRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
-    
+
     const diffSecs = Math.floor(diffMs / 1000);
     if (diffSecs < 60) return `${diffSecs} second${diffSecs !== 1 ? 's' : ''} ago`;
-    
+
     const diffMins = Math.floor(diffSecs / 60);
     if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
-    
+
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-    
+
     const diffDays = Math.floor(diffHours / 24);
     if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
-    
+
     return date.toLocaleDateString();
   };
 
-  // Fetch news sources
   const fetchNewsSources = async () => {
     try {
       const response = await fetch('/api/news/sources');
@@ -106,24 +113,23 @@ export function NewsFeed() {
     }
   };
 
-  // Fetch news
   const fetchNews = async (category = selectedCategory) => {
     setLoading(true);
     setError(null);
     setRefreshing(true);
-    
+
     try {
       const url = `/api/news?category=${category}`;
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch news: ${response.status}`);
       }
-      
+
       const data: NewsApiResponse = await response.json();
       setNews(data.items);
       setSources(data.sources);
-      
+
     } catch (err: any) {
       setError(err.message || 'Failed to fetch news');
       console.error('Error fetching news:', err);
@@ -133,38 +139,50 @@ export function NewsFeed() {
     }
   };
 
-  // Initial fetch
   useEffect(() => {
     fetchNewsSources();
     fetchNews();
-    
-    // Set up auto-refresh every 5 minutes
+
     const refreshInterval = setInterval(() => {
       fetchNews();
     }, 5 * 60 * 1000);
-    
+
     return () => clearInterval(refreshInterval);
   }, []);
 
-  // Fetch news when category changes
   useEffect(() => {
     fetchNews(selectedCategory);
   }, [selectedCategory]);
 
-  // Handle category change
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value);
   };
 
-  // Handle manual refresh
   const handleRefresh = () => {
     fetchNews();
   };
 
-  // Filter news by category for tabs
   const getNewsByCategory = (category: string) => {
     if (category === 'all') return news;
     return news.filter(item => item.category === category);
+  };
+
+  const toggleSaveArticle = (article: NewsItem) => {
+    const guid = article.guid || article.link;
+    if (!guid) return;
+
+    setSavedArticles(current => {
+      const isArticleSaved = current.some(saved => saved.guid === guid);
+      if (isArticleSaved) {
+        return current.filter(saved => saved.guid !== guid);
+      }
+      return [...current, { guid, savedAt: new Date().toISOString() }];
+    });
+  };
+
+  const isArticleSaved = (article: NewsItem) => {
+    const guid = article.guid || article.link;
+    return guid ? savedArticles.some(saved => saved.guid === guid) : false;
   };
 
   return (
@@ -189,7 +207,7 @@ export function NewsFeed() {
           <CardDescription>
             Latest news from various reliable sources
           </CardDescription>
-          
+
           {availableSources && (
             <div className="flex items-center mt-4 space-x-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
@@ -206,11 +224,11 @@ export function NewsFeed() {
                   ))}
                 </SelectContent>
               </Select>
-              
+
               {selectedCategory !== 'all' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setSelectedCategory('all')}
                   className="h-8 px-2"
                 >
@@ -220,7 +238,7 @@ export function NewsFeed() {
             </div>
           )}
         </CardHeader>
-        
+
         <CardContent>
           {error && (
             <div className="bg-red-50 p-4 rounded-md text-red-700 mb-4">
@@ -230,11 +248,11 @@ export function NewsFeed() {
               </p>
             </div>
           )}
-          
+
           {availableSources && (
-            <Tabs 
-              defaultValue="all" 
-              value={activeTab} 
+            <Tabs
+              defaultValue="all"
+              value={activeTab}
               onValueChange={setActiveTab}
               className="w-full"
             >
@@ -246,28 +264,32 @@ export function NewsFeed() {
                   </TabsTrigger>
                 ))}
               </TabsList>
-              
+
               <TabsContent value="all" className="mt-0">
-                <NewsList 
-                  news={news} 
-                  loading={loading} 
-                  formatRelativeTime={formatRelativeTime} 
+                <NewsList
+                  news={news}
+                  loading={loading}
+                  formatRelativeTime={formatRelativeTime}
+                  onSaveArticle={toggleSaveArticle}
+                  isArticleSaved={isArticleSaved}
                 />
               </TabsContent>
-              
+
               {availableSources.categories.map(category => (
                 <TabsContent key={category} value={category} className="mt-0">
-                  <NewsList 
-                    news={getNewsByCategory(category)} 
-                    loading={loading} 
-                    formatRelativeTime={formatRelativeTime} 
+                  <NewsList
+                    news={getNewsByCategory(category)}
+                    loading={loading}
+                    formatRelativeTime={formatRelativeTime}
+                    onSaveArticle={toggleSaveArticle}
+                    isArticleSaved={isArticleSaved}
                   />
                 </TabsContent>
               ))}
             </Tabs>
           )}
         </CardContent>
-        
+
         <CardFooter className="text-sm text-muted-foreground">
           <div className="w-full flex justify-between items-center">
             <div>
@@ -289,19 +311,26 @@ interface NewsListProps {
   news: NewsItem[];
   loading: boolean;
   formatRelativeTime: (dateString: string) => string;
+  onSaveArticle: (article: NewsItem) => void;
+  isArticleSaved: (article: NewsItem) => boolean;
 }
 
-function NewsList({ news, loading, formatRelativeTime }: NewsListProps) {
+function NewsList({ news, loading, formatRelativeTime, onSaveArticle, isArticleSaved }: NewsListProps) {
   if (loading) {
     return (
       <div className="space-y-4">
         {Array.from({ length: 5 }).map((_, index) => (
           <Card key={index} className="mb-4">
             <CardHeader className="py-3">
-              <Skeleton className="h-5 w-3/4 mb-2" />
-              <div className="flex gap-2">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-28" />
+              <div className="flex gap-4">
+                <Skeleton className="h-24 w-24 rounded-md" />
+                <div className="flex-1">
+                  <Skeleton className="h-5 w-3/4 mb-2" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-28" />
+                  </div>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="py-2">
@@ -327,35 +356,62 @@ function NewsList({ news, loading, formatRelativeTime }: NewsListProps) {
       {news.map((item, index) => (
         <Card key={item.guid || index} className="mb-4 hover:bg-muted/30 transition-colors">
           <CardHeader className="py-3">
-            <a 
-              href={item.link} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-start group"
-            >
+            <div className="flex gap-4">
+              {item.image && (
+                <div className="relative h-24 w-24 rounded-md overflow-hidden shrink-0">
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="object-cover w-full h-full"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
               <div className="flex-1">
-                <CardTitle className="text-base group-hover:text-blue-600 transition-colors">
-                  {item.title}
-                </CardTitle>
-              </div>
-              <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 text-blue-600 transition-opacity" />
-            </a>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="outline" className="text-xs">
-                {item.sourceName}
-              </Badge>
-              <Badge variant="secondary" className="text-xs">
-                {item.category}
-              </Badge>
-              <div className="text-xs flex items-center text-muted-foreground">
-                <Clock className="h-3 w-3 mr-1" />
-                {formatRelativeTime(item.pubDate || item.isoDate || '')}
+                <div className="flex items-start justify-between">
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 group"
+                  >
+                    <CardTitle className="text-base group-hover:text-blue-600 transition-colors line-clamp-2">
+                      {item.title}
+                    </CardTitle>
+                  </a>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-2"
+                    onClick={() => onSaveArticle(item)}
+                  >
+                    {isArticleSaved(item) ? (
+                      <BookmarkCheck className="h-4 w-4 text-blue-600" />
+                    ) : (
+                      <Bookmark className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <Badge variant="outline" className="text-xs">
+                    {item.sourceName}
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    {item.category}
+                  </Badge>
+                  <div className="text-xs flex items-center text-muted-foreground">
+                    <Clock className="h-3 w-3 mr-1" />
+                    {formatRelativeTime(item.pubDate || item.isoDate || '')}
+                  </div>
+                </div>
               </div>
             </div>
           </CardHeader>
           {item.contentSnippet && (
             <CardContent className="py-2">
-              <p className="text-sm text-muted-foreground line-clamp-2">
+              <p className="text-sm text-muted-foreground line-clamp-3">
                 {item.contentSnippet.replace(/\n/g, ' ')}
               </p>
             </CardContent>
