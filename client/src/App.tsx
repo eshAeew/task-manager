@@ -6,8 +6,18 @@ import Calendar from "@/pages/calendar";
 import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 import Sudoku from "@/pages/sudoku";
+import Notes from "@/pages/notes";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Home as HomeIcon, LayoutDashboard, HelpCircle, Plus, Gamepad2, BookOpen } from "lucide-react";
+import { 
+  CalendarDays, 
+  Home as HomeIcon, 
+  LayoutDashboard, 
+  HelpCircle, 
+  Plus, 
+  Gamepad2, 
+  BookOpen,
+  StickyNote
+} from "lucide-react";
 import { InsertTask, Task } from "@shared/schema";
 import { addTask } from "@/lib/tasks";
 import Home from "@/pages/home";
@@ -49,6 +59,15 @@ function Navigation() {
               Wikipedia
             </Button>
           </Link>
+          <Link href="/notes">
+            <Button 
+              variant="ghost"
+              className="text-emerald-600 hover:text-emerald-800"
+            >
+              <StickyNote className="mr-2 h-4 w-4" />
+              Notes
+            </Button>
+          </Link>
           <Link href="/sudoku">
             <Button 
               variant="ghost"
@@ -77,6 +96,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/wikipedia" component={Wikipedia} />
+      <Route path="/notes" component={Notes} />
       <Route path="/sudoku" component={Sudoku} />
       <Route path="/support" component={Support} />
       <Route component={NotFound} />
