@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Timer, Pause, Play, Settings } from "lucide-react";
+import { Timer, Pause, Play, Settings, Gamepad2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Link } from "wouter";
 
 interface PomodoroTimerProps {
   taskTitle: string;
+  onBreakStateChange?: (isBreak: boolean) => void;
 }
 
 interface TimerSettings {
@@ -33,12 +35,32 @@ function loadSettings(): TimerSettings {
   }
 }
 
-export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
+// Create a context to share the break state across components
+export const useBreakState = () => {
+  const [isInBreak, setIsInBreak] = useState(false);
+  return { isInBreak, setIsInBreak };
+};
+
+// Function to get the current break state from localStorage
+export const getBreakState = (): boolean => {
+  try {
+    return JSON.parse(localStorage.getItem('pomodoro_break_active') || 'false');
+  } catch {
+    return false;
+  }
+};
+
+// Function to set the break state in localStorage
+export const setBreakState = (isBreak: boolean): void => {
+  localStorage.setItem('pomodoro_break_active', JSON.stringify(isBreak));
+};
+
+export function PomodoroTimer({ taskTitle, onBreakStateChange }: PomodoroTimerProps) {
   const [settings, setSettings] = useState<TimerSettings>(loadSettings);
   const [showSettings, setShowSettings] = useState(false);
   const [timeLeft, setTimeLeft] = useState(settings.workMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
-  const [isBreak, setIsBreak] = useState(false);
+  const [isBreak, setIsBreak] = useState(getBreakState());
   const [progress, setProgress] = useState(0);
 
   // Refs for tracking actual time
@@ -50,6 +72,14 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
   const calculateProgress = useCallback((timeLeft: number, totalTime: number) => {
     return ((totalTime - timeLeft) / totalTime) * 100;
   }, []);
+
+  // Update the break state in localStorage and notify parent components
+  useEffect(() => {
+    setBreakState(isBreak);
+    if (onBreakStateChange) {
+      onBreakStateChange(isBreak);
+    }
+  }, [isBreak, onBreakStateChange]);
 
   useEffect(() => {
     let animationFrameId: number;
@@ -150,6 +180,15 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
     resetTimer();
   };
 
+  // For testing, enable manual override of break state
+  const toggleBreakState = () => {
+    setIsBreak(!isBreak);
+    setTimeLeft(!isBreak ? settings.breakMinutes * 60 : settings.workMinutes * 60);
+    setProgress(0);
+    setIsRunning(false);
+    startTimeRef.current = null;
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -159,14 +198,28 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
             {isBreak ? "Break Time" : "Work Session"}
           </span>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setShowSettings(!showSettings)}
-          disabled={isRunning}
-        >
-          <Settings className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          {isBreak && (
+            <Link href="/sudoku">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1 text-xs"
+              >
+                <Gamepad2 className="h-3 w-3" />
+                Play Sudoku
+              </Button>
+            </Link>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowSettings(!showSettings)}
+            disabled={isRunning}
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {showSettings ? (
@@ -210,6 +263,17 @@ export function PomodoroTimer({ taskTitle }: PomodoroTimerProps) {
               onClick={() => handleSettingsSave(settings)}
             >
               Save
+            </Button>
+          </div>
+          {/* Developer option for testing - normally would be hidden in production */}
+          <div className="mt-4 pt-4 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleBreakState}
+              className="w-full text-xs"
+            >
+              Test: Toggle Break Mode
             </Button>
           </div>
         </div>

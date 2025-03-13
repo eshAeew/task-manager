@@ -5,17 +5,32 @@ import { Toaster } from "@/components/ui/toaster";
 import Calendar from "@/pages/calendar";
 import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
+import Sudoku from "@/pages/sudoku";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Home as HomeIcon, LayoutDashboard, HelpCircle, Plus } from "lucide-react";
+import { CalendarDays, Home as HomeIcon, LayoutDashboard, HelpCircle, Plus, Gamepad2 } from "lucide-react";
 import { InsertTask, Task } from "@shared/schema";
 import { addTask } from "@/lib/tasks";
 import Home from "@/pages/home";
 import Support from "@/pages/support";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { TaskForm } from "@/components/task-form";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getBreakState } from "@/components/pomodoro-timer";
 
 function Navigation() {
+  const [isBreakActive, setIsBreakActive] = useState(getBreakState());
+  
+  // Check if break state changes
+  useEffect(() => {
+    const checkBreakState = () => {
+      setIsBreakActive(getBreakState());
+    };
+    
+    // Check periodically for break state changes
+    const interval = setInterval(checkBreakState, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <nav className="border-b">
       <div className="container mx-auto px-4">
@@ -44,6 +59,17 @@ function Navigation() {
               Support
             </Button>
           </Link>
+          {isBreakActive && (
+            <Link href="/sudoku">
+              <Button 
+                variant="ghost"
+                className="bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
+              >
+                <Gamepad2 className="mr-2 h-4 w-4" />
+                Sudoku Game
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </nav>
@@ -51,12 +77,33 @@ function Navigation() {
 }
 
 function Router() {
+  const [isBreakActive, setIsBreakActive] = useState(getBreakState());
+  
+  // Update break state periodically to ensure the Sudoku page gets current state
+  useEffect(() => {
+    const checkBreakState = () => {
+      setIsBreakActive(getBreakState());
+    };
+    
+    const interval = setInterval(checkBreakState, 1000);
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Handle break end (callback for Sudoku page)
+  const handleBreakEnd = () => {
+    // This would be called when break ends naturally or is manually ended
+    // Additional logic can be added here if needed
+  };
+
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/support" component={Support} />
+      <Route path="/sudoku">
+        {() => <Sudoku isBreakActive={isBreakActive} onBreakEnd={handleBreakEnd} />}
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );

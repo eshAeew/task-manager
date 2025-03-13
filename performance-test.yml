@@ -1,0 +1,36 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 30
+      arrivalRate: 5
+      name: "Warm up phase"
+    - duration: 60
+      arrivalRate: 10
+      rampTo: 20
+      name: "Ramp up load"
+    - duration: 30
+      arrivalRate: 20
+      name: "Sustained load"
+  defaults:
+    headers:
+      User-Agent: "Artillery Performance Test"
+  plugins:
+    metrics-by-endpoint: {}
+
+scenarios:
+  - name: "Basic website navigation"
+    flow:
+      - get:
+          url: "/"
+          capture:
+            - json: "$.title"
+              as: "title"
+      - think: 3
+      - get:
+          url: "/dashboard"
+      - think: 2
+      - get:
+          url: "/calendar"
+      - think: 2
+      - get:
+          url: "/support"
