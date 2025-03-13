@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Trash2, RefreshCw, Timer, Bell, Download, Upload, Layout, Maximize2, Minimize2, Paperclip } from "lucide-react";
+import { Trash2, RefreshCw, Timer, Bell, Download, Upload, Layout, Maximize2, Minimize2, Paperclip, Link as LinkIcon } from "lucide-react";
 import { format, isPast } from "date-fns";
 import { PomodoroTimer } from "./pomodoro-timer";
 import { TaskTimer } from "./task-timer";
@@ -107,15 +107,15 @@ export function TaskList({
     .sort((a, b) => {
       const valueA = getSortableValue(a, sortBy);
       const valueB = getSortableValue(b, sortBy);
-      
+
       if (typeof valueA === 'string' && typeof valueB === 'string') {
-        return sortDirection === 'asc' 
-          ? valueA.localeCompare(valueB) 
+        return sortDirection === 'asc'
+          ? valueA.localeCompare(valueB)
           : valueB.localeCompare(valueA);
       }
-      
-      return sortDirection === 'asc' 
-        ? (valueA as number) - (valueB as number) 
+
+      return sortDirection === 'asc'
+        ? (valueA as number) - (valueB as number)
         : (valueB as number) - (valueA as number);
     });
 
@@ -313,9 +313,9 @@ export function TaskList({
             onTagRemove={(tag) => setSelectedTags(prev => prev.filter(t => t !== tag))}
             tags={selectedTags}
           />
-          
+
           <TaskProgress tasks={tasks} className="mb-4 p-3 border rounded-md bg-card" />
-          
+
           <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md bg-muted/30">
             <span className="text-sm font-medium">Sort by:</span>
             <div className="flex flex-wrap gap-2">
@@ -337,7 +337,7 @@ export function TaskList({
                   sortDirection === "asc" ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
                 )}
               </Button>
-              
+
               <Button
                 variant={sortBy === "priority" ? "secondary" : "outline"}
                 size="sm"
@@ -356,7 +356,7 @@ export function TaskList({
                   sortDirection === "asc" ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
                 )}
               </Button>
-              
+
               <Button
                 variant={sortBy === "title" ? "secondary" : "outline"}
                 size="sm"
@@ -375,7 +375,7 @@ export function TaskList({
                   sortDirection === "asc" ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
                 )}
               </Button>
-              
+
               <Button
                 variant={sortBy === "createdAt" ? "secondary" : "outline"}
                 size="sm"
@@ -436,6 +436,23 @@ export function TaskList({
                         Reminder: {format(task.reminderTime, "PPp")}
                       </span>
                     )}
+                    {task.links && task.links.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {task.links.map((link, index) => (
+                          <a
+                            key={index}
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer flex items-center gap-1 transition-colors"
+                            title={link.url}
+                          >
+                            <LinkIcon className="h-3 w-3" />
+                            {link.title}
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {task.dueDate && (
                     <div className="flex justify-between items-center mt-1">
@@ -492,7 +509,7 @@ export function TaskList({
                 <PomodoroTimer taskTitle={task.title} />
               </div>
             )}
-            
+
             {task.recurrence !== "none" && task.recurrence !== undefined && (
               <div className="mt-2">
                 <RecurrenceVisualization task={task} />

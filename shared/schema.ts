@@ -2,30 +2,33 @@ import { pgTable, text, serial, boolean, timestamp, integer } from "drizzle-orm/
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Add link type definition
+export type TaskLink = {
+  url: string;
+  title: string;
+};
+
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   priority: text("priority", { enum: ["low", "medium", "high"] }).notNull(),
   completed: boolean("completed").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  // Add time tracking
+  // Add links storage
+  links: text("links").array(),
+  // Existing fields
   timeSpent: integer("time_spent").default(0),
   lastStarted: timestamp("last_started"),
-  // Add gamification
   xpEarned: integer("xp_earned").default(0),
-  // Add status for Kanban
   status: text("status", { 
     enum: ["todo", "in_progress", "done"] 
   }).notNull().default("todo"),
-  // Add categories and tags
   category: text("category", {
     enum: ["work", "personal", "study", "shopping", "health", "other"]
   }).notNull().default("other"),
   tags: text("tags").array(),
-  // Add file attachment
   attachmentUrl: text("attachment_url"),
   attachmentName: text("attachment_name"),
-  // Existing fields...
   recurrence: text("recurrence", { 
     enum: ["none", "daily", "weekly", "monthly", "custom"] 
   }).notNull().default("none"),
@@ -56,6 +59,7 @@ export const insertTaskSchema = createInsertSchema(tasks)
     timeSpent: true,
     lastStarted: true,
     xpEarned: true,
+    links: true,
   })
   .extend({
     title: z.string().min(1, "Title is required").max(100),
@@ -74,12 +78,15 @@ export const insertTaskSchema = createInsertSchema(tasks)
     timeSpent: z.number().int().default(0),
     lastStarted: z.date().optional(),
     xpEarned: z.number().int().default(0),
+    links: z.array(z.object({
+      url: z.string().url("Invalid URL"),
+      title: z.string(),
+    })).optional(),
   });
 
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type Task = typeof tasks.$inferSelect;
 
-// Categories and their icons
 export const categoryIcons = {
   work: "💼",
   personal: "👤",
@@ -111,7 +118,7 @@ export const BADGES = {
     name: "Beginner",
     description: "Complete your first task",
     icon: "🎉",
-    requirement: 1, // tasks completed
+    requirement: 1,
   },
   PRODUCTIVE: {
     id: "productive",
