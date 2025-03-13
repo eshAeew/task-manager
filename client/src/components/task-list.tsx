@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Trash2, RefreshCw, Timer, Bell, Download, Upload, Layout, Maximize2, Minimize2, Paperclip, Link as LinkIcon } from "lucide-react";
+import { Trash2, RefreshCw, Timer, Bell, Download, Upload, Layout, Maximize2, Minimize2, Paperclip, Link as LinkIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { format, isPast } from "date-fns";
 import { PomodoroTimer } from "./pomodoro-timer";
 import { TaskTimer } from "./task-timer";
@@ -17,7 +17,7 @@ import { PriorityIndicator } from "./priority-indicator";
 import { TaskProgress } from "./task-progress";
 import { DueDateCountdown } from "./due-date-countdown";
 import { categoryIcons } from "@shared/schema";
-import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowUpDown } from "lucide-react";
 
 interface TaskListProps {
   tasks: Task[];
@@ -51,6 +51,7 @@ export function TaskList({
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"dueDate" | "priority" | "createdAt" | "title">("dueDate");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [expandedNotes, setExpandedNotes] = useState<number[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -196,6 +197,14 @@ export function TaskList({
       }
     }
     onToggleComplete(taskId);
+  };
+
+  const toggleNotes = (taskId: number) => {
+    setExpandedNotes(prev =>
+      prev.includes(taskId)
+        ? prev.filter(id => id !== taskId)
+        : [...prev, taskId]
+    );
   };
 
   if (view === "kanban") {
@@ -513,6 +522,28 @@ export function TaskList({
             {task.recurrence !== "none" && task.recurrence !== undefined && (
               <div className="mt-2">
                 <RecurrenceVisualization task={task} />
+              </div>
+            )}
+            {task.notes && (
+              <div className="mt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleNotes(task.id)}
+                  className="w-full flex items-center justify-between py-1"
+                >
+                  <span className="text-sm">Notes</span>
+                  {expandedNotes.includes(task.id) ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+                {expandedNotes.includes(task.id) && (
+                  <div className="mt-2 p-3 bg-muted/30 rounded-md">
+                    <p className="text-sm whitespace-pre-wrap">{task.notes}</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

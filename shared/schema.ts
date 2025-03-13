@@ -16,6 +16,8 @@ export const tasks = pgTable("tasks", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   // Add links storage
   links: text("links").array(),
+  // Add notes storage
+  notes: text("notes"),
   // Existing fields
   timeSpent: integer("time_spent").default(0),
   lastStarted: timestamp("last_started"),
@@ -60,6 +62,7 @@ export const insertTaskSchema = createInsertSchema(tasks)
     lastStarted: true,
     xpEarned: true,
     links: true,
+    notes: true,
   })
   .extend({
     title: z.string().min(1, "Title is required").max(100),
@@ -82,6 +85,7 @@ export const insertTaskSchema = createInsertSchema(tasks)
       url: z.string().url("Invalid URL"),
       title: z.string(),
     })).optional(),
+    notes: z.string().optional(),
   });
 
 export type InsertTask = z.infer<typeof insertTaskSchema>;

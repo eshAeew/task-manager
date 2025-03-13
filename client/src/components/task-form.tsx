@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
 
 interface TaskFormProps {
   onSubmit: (data: InsertTask) => void;
@@ -42,6 +43,7 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
       dueDate: new Date(),
       tags: [],
       links: [],
+      notes: "",
       ...defaultValues,
     },
   });
@@ -376,6 +378,24 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
                     ))}
                   </div>
                 </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notes</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Add notes about this task..."
+                  className="resize-none"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
