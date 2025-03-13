@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getTasks } from "@/lib/tasks";
 import { AnalyticsDashboard } from "@/components/analytics-dashboard";
+import { TimeTrackingSummary } from "@/components/time-tracking-summary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
@@ -121,7 +122,14 @@ export default function DashboardPage() {
         </TabsList>
 
         <TabsContent value="overview">
-          <AnalyticsDashboard tasks={tasks} />
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <AnalyticsDashboard tasks={tasks} />
+            </div>
+            <div className="md:col-span-1">
+              <TimeTrackingSummary tasks={tasks} />
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="detailed">

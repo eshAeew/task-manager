@@ -15,6 +15,7 @@ import { TaskSearch } from "./task-search";
 import { RecurrenceVisualization } from "./recurrence-visualization";
 import { PriorityIndicator } from "./priority-indicator";
 import { TaskProgress } from "./task-progress";
+import { DueDateCountdown } from "./due-date-countdown";
 import { categoryIcons } from "@shared/schema";
 import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
 
@@ -313,6 +314,8 @@ export function TaskList({
             tags={selectedTags}
           />
           
+          <TaskProgress tasks={tasks} className="mb-4 p-3 border rounded-md bg-card" />
+          
           <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md bg-muted/30">
             <span className="text-sm font-medium">Sort by:</span>
             <div className="flex flex-wrap gap-2">
@@ -435,13 +438,16 @@ export function TaskList({
                     )}
                   </div>
                   {task.dueDate && (
-                    <p className={`text-xs mt-1 ${
-                      isPast(task.dueDate) && !task.completed
-                        ? "text-red-600 dark:text-red-400"
-                        : "text-muted-foreground"
-                    }`}>
-                      Due: {format(task.dueDate, "PPP")}
-                    </p>
+                    <div className="flex justify-between items-center mt-1">
+                      <p className={`text-xs ${
+                        isPast(task.dueDate) && !task.completed
+                          ? "text-red-600 dark:text-red-400"
+                          : "text-muted-foreground"
+                      }`}>
+                        Due: {format(task.dueDate, "PPP")}
+                      </p>
+                      {!task.completed && <DueDateCountdown dueDate={task.dueDate} />}
+                    </div>
                   )}
                   {task.nextDue && (
                     <p className="text-xs text-muted-foreground mt-1">
