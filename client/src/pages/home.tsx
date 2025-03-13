@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/task-list";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { AnalyticsDashboard } from "@/components/analytics-dashboard";
+import { MiniDashboard } from "@/components/mini-dashboard";
 import { TrashBin } from "@/components/trash-bin";
 import { VoiceInput } from "@/components/voice-input";
 import { DateFilter } from "@/components/date-filter";
@@ -99,8 +99,10 @@ export default function Home() {
 
   const filteredTasks = selectedDate
     ? tasks.filter(task => {
-        const taskDate = new Date(task.dueDate);
-        return isWithinInterval(taskDate, {
+        if (!task.dueDate) return false;
+        // Convert string or Date to Date object safely
+        const taskDueDate = task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate);
+        return isWithinInterval(taskDueDate, {
           start: startOfDay(selectedDate),
           end: endOfDay(selectedDate)
         });
@@ -119,7 +121,7 @@ export default function Home() {
         </div>
 
         <div className="mb-8">
-          <AnalyticsDashboard tasks={tasks} />
+          <MiniDashboard tasks={tasks} />
         </div>
 
         <Tabs defaultValue="tasks">
