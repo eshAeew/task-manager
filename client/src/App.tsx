@@ -7,12 +7,13 @@ import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 import Sudoku from "@/pages/sudoku";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Home as HomeIcon, LayoutDashboard, HelpCircle, Plus, Gamepad2, BookOpen } from "lucide-react";
+import { CalendarDays, Home as HomeIcon, LayoutDashboard, HelpCircle, Plus, Gamepad2, BookOpen, Newspaper } from "lucide-react";
 import { InsertTask, Task } from "@shared/schema";
 import { addTask } from "@/lib/tasks";
 import Home from "@/pages/home";
 import Support from "@/pages/support";
 import Wikipedia from "@/pages/wikipedia";
+import News from "@/pages/news";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { TaskForm } from "@/components/task-form";
 import { useState } from "react";
@@ -78,6 +79,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/wikipedia" component={Wikipedia} />
+      <Route path="/news" component={News} />
       <Route path="/sudoku" component={Sudoku} />
       <Route path="/support" component={Support} />
       <Route component={NotFound} />
