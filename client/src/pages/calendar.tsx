@@ -9,6 +9,7 @@ import { format, isToday, isSameDay, addDays, subDays } from "date-fns";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { categoryIcons } from "@shared/schema";
+import { TaskTimer } from "@/components/task-timer";
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -16,7 +17,7 @@ export default function CalendarPage() {
   const { data: tasks = [] } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
   });
-  
+
   // Format time display (copied from task-timer.tsx for consistency)
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -40,6 +41,16 @@ export default function CalendarPage() {
     const taskCreatedDate = task.createdAt ? new Date(task.createdAt) : null;
     return taskCreatedDate && isSameDay(taskCreatedDate, selectedDate);
   });
+
+  // Group tasks by status
+  const groupedTasks = tasksForSelectedDate.reduce((acc, task) => {
+    const status = task.completed ? 'completed' : task.status;
+    if (!acc[status]) {
+      acc[status] = [];
+    }
+    acc[status].push(task);
+    return acc;
+  }, {} as Record<string, Task[]>);
 
   // Create a map of dates with tasks based on due date
   const taskDates = tasks.reduce((acc: Record<string, number>, task) => {
@@ -74,7 +85,11 @@ export default function CalendarPage() {
               <Button variant="outline" size="sm" onClick={goToPreviousDay}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={goToToday}>
+              <Button 
+                variant={isToday(selectedDate) ? "default" : "outline"} 
+                size="sm" 
+                onClick={goToToday}
+              >
                 Today
               </Button>
               <Button variant="outline" size="sm" onClick={goToNextDay}>
@@ -100,6 +115,11 @@ export default function CalendarPage() {
                 }
               }}
             />
+            <div className="mt-4 text-center text-sm text-muted-foreground">
+              {Object.keys(taskDates).length > 0 && (
+                <p>Days with tasks are highlighted</p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -120,60 +140,93 @@ export default function CalendarPage() {
           <CardContent>
             <ScrollArea className="h-[400px] pr-4">
               {tasksForSelectedDate.length > 0 ? (
-                <div className="space-y-4">
-                  {tasksForSelectedDate.map((task) => (
-                    <div
-                      key={task.id}
-                      className="flex flex-col p-4 rounded-lg border space-y-3"
-                    >
-                      <div className="flex items-start justify-between">
-                        <h3 className="font-medium flex items-center gap-2">
-                          {task.title}
-                          {task.completed && (
-                            <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
-                          )}
-                        </h3>
-                        <Badge className={
-                          task.priority === 'high' ? 'bg-red-500' :
-                          task.priority === 'medium' ? 'bg-yellow-500' :
-                          'bg-blue-500'
-                        }>
-                          {task.priority}
-                        </Badge>
-                      </div>
+                <div className="space-y-6">
+                  {Object.entries(groupedTasks).map(([status, tasks]) => (
+                    <div key={status} className="space-y-3">
+                      <h3 className="font-medium capitalize text-sm text-muted-foreground">
+                        {status} ({tasks.length})
+                      </h3>
+                      <div className="space-y-3">
+                        {tasks.map((task) => (
+                          <div
+                            key={task.id}
+                            className="flex flex-col p-4 rounded-lg border space-y-3"
+                          >
+                            <div className="flex items-start justify-between">
+                              <h3 className="font-medium flex items-center gap-2">
+                                {task.title}
+                                {task.completed && (
+                                  <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">
+                                    Completed
+                                  </Badge>
+                                )}
+                              </h3>
+                              <Badge className={
+                                task.priority === 'high' ? 'bg-red-500' :
+                                task.priority === 'medium' ? 'bg-yellow-500' :
+                                'bg-blue-500'
+                              }>
+                                {task.priority}
+                              </Badge>
+                            </div>
 
-                      <div className="flex flex-wrap gap-2">
-                        {task.category && (
-                          <Badge variant="outline" className="flex items-center gap-1">
-                            <span>{categoryIcons[task.category as keyof typeof categoryIcons]}</span>
-                            {task.category}
-                          </Badge>
-                        )}
-                        {task.tags && task.tags.map((tag) => (
-                          <Badge key={tag} variant="secondary">
-                            {tag}
-                          </Badge>
+                            <div className="flex flex-wrap gap-2">
+                              {task.category && (
+                                <Badge variant="outline" className="flex items-center gap-1">
+                                  <span>{categoryIcons[task.category as keyof typeof categoryIcons]}</span>
+                                  {task.category}
+                                </Badge>
+                              )}
+                              {task.tags && task.tags.map((tag) => (
+                                <Badge key={tag} variant="secondary">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+
+                            {task.recurrence !== 'none' && (
+                              <div className="text-sm text-muted-foreground">
+                                Repeats: {task.recurrence}
+                                {task.recurrenceInterval && ` (${task.recurrenceInterval})`}
+                              </div>
+                            )}
+
+                            {task.reminderEnabled && task.reminderTime && (
+                              <div className="text-sm text-muted-foreground">
+                                Reminder: {format(new Date(task.reminderTime), 'PPp')}
+                              </div>
+                            )}
+
+                            {task.timeSpent && task.timeSpent > 0 && (
+                              <div className="text-sm text-muted-foreground">
+                                Time spent: {formatTime(task.timeSpent)}
+                              </div>
+                            )}
+
+                            {task.notes && (
+                              <div className="text-sm text-muted-foreground bg-muted/30 p-2 rounded">
+                                {task.notes}
+                              </div>
+                            )}
+
+                            {task.links && task.links.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {task.links.map((link, index) => (
+                                  <a
+                                    key={index}
+                                    href={link.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer flex items-center gap-1 transition-colors"
+                                  >
+                                    {link.title}
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         ))}
                       </div>
-
-                      {task.recurrence !== 'none' && (
-                        <div className="text-sm text-muted-foreground">
-                          Repeats: {task.recurrence}
-                          {task.recurrenceInterval && ` (${task.recurrenceInterval})`}
-                        </div>
-                      )}
-
-                      {task.reminderEnabled && task.reminderTime && (
-                        <div className="text-sm text-muted-foreground">
-                          Reminder: {format(new Date(task.reminderTime), 'PPp')}
-                        </div>
-                      )}
-
-                      {task.timeSpent && task.timeSpent > 0 && (
-                        <div className="text-sm text-muted-foreground">
-                          Time spent: {formatTime(task.timeSpent)}
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
