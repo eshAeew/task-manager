@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getTasks, importTasks } from "@/lib/tasks";
 import { KanbanBoard } from "./kanban-board";
 import { TaskSearch } from "./task-search";
+import { RecurrenceVisualization } from "./recurrence-visualization";
 import { categoryIcons } from "@shared/schema";
 
 interface TaskListProps {
@@ -75,7 +76,7 @@ export function TaskList({
     const matchesPriority = filter === "all" || task.priority === filter;
     const matchesCategory = selectedCategory === "all" || task.category === selectedCategory;
     const matchesTags = selectedTags.length === 0 ||
-      (task.tags && selectedTags.every(tag => task.tags.includes(tag)));
+      (Array.isArray(task.tags) && selectedTags.every(tag => task.tags!.includes(tag)));
     return matchesSearch && matchesPriority && matchesCategory && matchesTags;
   });
 
@@ -300,10 +301,7 @@ export function TaskList({
                       </span>
                     ))}
                     {task.recurrence !== "none" && (
-                      <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 flex items-center gap-1">
-                        <RefreshCw className="h-3 w-3" />
-                        {getRecurrenceText(task)}
-                      </span>
+                      <RecurrenceVisualization task={task} compact={true} />
                     )}
                     {task.reminderEnabled && task.reminderTime && (
                       <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 flex items-center gap-1">
@@ -362,6 +360,12 @@ export function TaskList({
             {activeTimerTaskId === task.id && (
               <div className="mt-4 border-t pt-4">
                 <PomodoroTimer taskTitle={task.title} />
+              </div>
+            )}
+            
+            {task.recurrence !== "none" && task.recurrence !== undefined && (
+              <div className="mt-2">
+                <RecurrenceVisualization task={task} />
               </div>
             )}
           </div>

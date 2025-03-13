@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InsertTask, insertTaskSchema, recurrenceOptions, categoryOptions } from "@shared/schema";
+import { addDays, format, isSameDay } from "date-fns";
+import { CalendarDays, RefreshCw, CalendarIcon, Paperclip, FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -11,8 +13,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Paperclip, FileText, X } from "lucide-react";
-import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
 interface TaskFormProps {
