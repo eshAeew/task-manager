@@ -14,22 +14,9 @@ import Home from "@/pages/home";
 import Support from "@/pages/support";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { TaskForm } from "@/components/task-form";
-import { useState, useEffect } from "react";
-import { getBreakState } from "@/components/pomodoro-timer";
+import { useState } from "react";
 
 function Navigation() {
-  const [isBreakActive, setIsBreakActive] = useState(getBreakState());
-  
-  // Check if break state changes
-  useEffect(() => {
-    const checkBreakState = () => {
-      setIsBreakActive(getBreakState());
-    };
-    
-    // Check periodically for break state changes
-    const interval = setInterval(checkBreakState, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <nav className="border-b">
@@ -53,23 +40,21 @@ function Navigation() {
               Calendar
             </Button>
           </Link>
+          <Link href="/sudoku">
+            <Button 
+              variant="ghost"
+              className="text-purple-700 hover:text-purple-800"
+            >
+              <Gamepad2 className="mr-2 h-4 w-4" />
+              Sudoku
+            </Button>
+          </Link>
           <Link href="/support">
             <Button variant="ghost">
               <HelpCircle className="mr-2 h-4 w-4" />
               Support
             </Button>
           </Link>
-          {isBreakActive && (
-            <Link href="/sudoku">
-              <Button 
-                variant="ghost"
-                className="bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
-              >
-                <Gamepad2 className="mr-2 h-4 w-4" />
-                Sudoku Game
-              </Button>
-            </Link>
-          )}
         </div>
       </div>
     </nav>
@@ -77,33 +62,13 @@ function Navigation() {
 }
 
 function Router() {
-  const [isBreakActive, setIsBreakActive] = useState(getBreakState());
-  
-  // Update break state periodically to ensure the Sudoku page gets current state
-  useEffect(() => {
-    const checkBreakState = () => {
-      setIsBreakActive(getBreakState());
-    };
-    
-    const interval = setInterval(checkBreakState, 1000);
-    return () => clearInterval(interval);
-  }, []);
-  
-  // Handle break end (callback for Sudoku page)
-  const handleBreakEnd = () => {
-    // This would be called when break ends naturally or is manually ended
-    // Additional logic can be added here if needed
-  };
-
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/support" component={Support} />
-      <Route path="/sudoku">
-        {() => <Sudoku isBreakActive={isBreakActive} onBreakEnd={handleBreakEnd} />}
-      </Route>
+      <Route path="/sudoku" component={Sudoku} />
       <Route component={NotFound} />
     </Switch>
   );

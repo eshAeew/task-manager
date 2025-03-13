@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
-  Trophy, Lock, Clock, AlertCircle, Brain, 
+  Trophy, Clock, AlertCircle, Brain, 
   Dices, ArrowRight, RefreshCw, Rocket, 
   BrainCircuit, Sparkles, CheckCircle2, XCircle
 } from "lucide-react";
@@ -184,8 +183,10 @@ const checkSolution = (board: number[][], solution: number[][]) => {
   return board.flat().filter(cell => cell !== 0).length === 81;
 };
 
+const initialDifficulty: SudokuDifficulty = "easy";
+
 export default function SudokuPage() {
-  const [difficulty, setDifficulty] = useState<SudokuDifficulty>("easy");
+  const [difficulty, setDifficulty] = useState<SudokuDifficulty>(initialDifficulty);
   const [game, setGame] = useState(() => generateSudoku(difficulty));
   const [board, setBoard] = useState<number[][]>([]);
   const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null);
@@ -365,62 +366,6 @@ export default function SudokuPage() {
     });
   };
 
-  // If not in break time, show locked message
-  if (!isBreakActive) {
-    return (
-      <div className="container mx-auto px-4 py-10">
-        <Card className="max-w-xl mx-auto">
-          <CardHeader className="text-center">
-            <CardTitle className="flex items-center justify-center text-2xl text-red-500">
-              <Lock className="mr-2 h-6 w-6" />
-              Sudoku Game - Break Time Only
-            </CardTitle>
-            <CardDescription className="text-lg">
-              Take a productive break with Sudoku
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="flex flex-col items-center justify-center p-4 rounded-lg border bg-amber-50 border-amber-200">
-                <Brain className="h-12 w-12 text-amber-500 mb-2" />
-                <h3 className="font-semibold text-amber-700">Exercise Your Mind</h3>
-                <p className="text-center text-sm text-amber-600">
-                  Sudoku improves concentration and logical thinking
-                </p>
-              </div>
-              <div className="flex flex-col items-center justify-center p-4 rounded-lg border bg-blue-50 border-blue-200">
-                <Clock className="h-12 w-12 text-blue-500 mb-2" />
-                <h3 className="font-semibold text-blue-700">Perfect for Breaks</h3>
-                <p className="text-center text-sm text-blue-600">
-                  Mentally recharge before returning to work
-                </p>
-              </div>
-            </div>
-            
-            <Alert className="border-red-200 bg-red-50">
-              <AlertCircle className="h-4 w-4 text-red-500" />
-              <AlertTitle>Access Restricted</AlertTitle>
-              <AlertDescription>
-                The Sudoku game is only available during your break time. 
-                Start a Pomodoro timer and wait for your break to begin.
-              </AlertDescription>
-            </Alert>
-            
-            <div className="flex justify-center mt-4">
-              <Button 
-                onClick={() => window.history.back()}
-                className="relative overflow-hidden group"
-              >
-                <div className="absolute inset-0 w-3 bg-green-500 transition-all duration-300 ease-out group-hover:w-full"></div>
-                <span className="relative text-white group-hover:text-white">Return to Main App</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 py-6">
       <Card className="max-w-2xl mx-auto">
@@ -438,7 +383,7 @@ export default function SudokuPage() {
                 </Badge>
               </CardTitle>
               <CardDescription className="mt-1">
-                Train your brain during your break
+                Train your brain with Sudoku
               </CardDescription>
             </div>
             
