@@ -14,10 +14,7 @@ import { Badge } from "@/components/ui/badge";
 
 type SudokuDifficulty = "easy" | "medium" | "hard";
 
-interface SudokuGameProps {
-  isBreakActive: boolean;
-  onBreakEnd: () => void;
-}
+// No longer need props since Sudoku is available anytime
 
 // Difficulty level styling
 const difficultyStyles = {
@@ -187,7 +184,7 @@ const checkSolution = (board: number[][], solution: number[][]) => {
   return board.flat().filter(cell => cell !== 0).length === 81;
 };
 
-export default function SudokuPage({ isBreakActive, onBreakEnd }: SudokuGameProps) {
+export default function SudokuPage() {
   const [difficulty, setDifficulty] = useState<SudokuDifficulty>("easy");
   const [game, setGame] = useState(() => generateSudoku(difficulty));
   const [board, setBoard] = useState<number[][]>([]);
@@ -218,7 +215,7 @@ export default function SudokuPage({ isBreakActive, onBreakEnd }: SudokuGameProp
   useEffect(() => {
     let interval: number;
     
-    if (isBreakActive && !isComplete) {
+    if (!isComplete) {
       interval = window.setInterval(() => {
         setTimer(prev => prev + 1);
       }, 1000);
@@ -227,7 +224,7 @@ export default function SudokuPage({ isBreakActive, onBreakEnd }: SudokuGameProp
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isBreakActive, isComplete]);
+  }, [isComplete]);
 
   // Calculate game progress
   useEffect(() => {
@@ -252,7 +249,6 @@ export default function SudokuPage({ isBreakActive, onBreakEnd }: SudokuGameProp
 
   // Handle cell selection
   const handleCellSelect = (row: number, col: number) => {
-    if (!isBreakActive) return;
     if (game.puzzle[row][col] === 0) {
       setSelectedCell([row, col]);
     }
@@ -260,7 +256,7 @@ export default function SudokuPage({ isBreakActive, onBreakEnd }: SudokuGameProp
 
   // Handle number input
   const handleNumberInput = (num: number) => {
-    if (!isBreakActive || !selectedCell) return;
+    if (!selectedCell) return;
     
     const [row, col] = selectedCell;
     if (game.puzzle[row][col] !== 0) return;
