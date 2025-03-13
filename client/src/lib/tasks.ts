@@ -9,20 +9,19 @@ interface DeletedTask extends Task {
   deletedAt: string;
 }
 
-export function getTasks(userUuid: string): Task[] {
+export function getTasks(): Task[] {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (!stored) return [];
   try {
     const tasks = JSON.parse(stored);
-    return tasks.filter((task: Task) =>
-      task.userUuid === userUuid || (task.isShared && task.userUuid !== userUuid)
-    ).map((task: any) => ({
+    // Convert date strings back to Date objects
+    return tasks.map((task: any) => ({
       ...task,
-      createdAt: new Date(task.createdAt),
-      lastCompleted: task.lastCompleted ? new Date(task.lastCompleted) : null,
-      nextDue: task.nextDue ? new Date(task.nextDue) : null,
-      dueDate: task.dueDate ? new Date(task.dueDate) : null,
-      reminderTime: task.reminderTime ? new Date(task.reminderTime) : null,
+      createdAt: parseISO(task.createdAt),
+      lastCompleted: task.lastCompleted ? parseISO(task.lastCompleted) : null,
+      nextDue: task.nextDue ? parseISO(task.nextDue) : null,
+      dueDate: task.dueDate ? parseISO(task.dueDate) : null,
+      reminderTime: task.reminderTime ? parseISO(task.reminderTime) : null,
     }));
   } catch {
     return [];
@@ -50,11 +49,11 @@ export function getDeletedTasks(): DeletedTask[] {
 
     return validTasks.map((task: any) => ({
       ...task,
-      createdAt: new Date(task.createdAt),
-      lastCompleted: task.lastCompleted ? new Date(task.lastCompleted) : null,
-      nextDue: task.nextDue ? new Date(task.nextDue) : null,
-      dueDate: task.dueDate ? new Date(task.dueDate) : null,
-      reminderTime: task.reminderTime ? new Date(task.reminderTime) : null,
+      createdAt: parseISO(task.createdAt),
+      lastCompleted: task.lastCompleted ? parseISO(task.lastCompleted) : null,
+      nextDue: task.nextDue ? parseISO(task.nextDue) : null,
+      dueDate: task.dueDate ? parseISO(task.dueDate) : null,
+      reminderTime: task.reminderTime ? parseISO(task.reminderTime) : null,
       deletedAt: task.deletedAt,
     }));
   } catch {
@@ -107,56 +106,70 @@ export function saveTasks(tasks: Task[]) {
 }
 
 export function addTask(task: InsertTask): Task {
-  const tasks = getTasks(task.userUuid);
+  const tasks = getTasks();
   const newTask: Task = {
     ...task,
     id: Date.now(),
     createdAt: new Date(),
     completed: false,
     lastCompleted: null,
-    nextDue: null,
+    nextDue: task.recurrence !== "none" ? calculateNextDueDate({
+      ...task,
+      id: Date.now(),
+      createdAt: new Date(),
+      lastCompleted: null,
+    } as Task) : null,
+    dueDate: task.dueDate ? new Date(task.dueDate) : null,
+    reminderTime: task.reminderTime ? new Date(task.reminderTime) : null,
+    recurrenceInterval: task.recurrenceInterval || null,
+    timeSpent: task.timeSpent || 0,
     lastStarted: null,
-    timeSpent: 0,
-    xpEarned: 0,
+    xpEarned: task.xpEarned || 0,
     tags: task.tags || [],
     attachmentUrl: task.attachmentUrl || null,
     attachmentName: task.attachmentName || null,
-    recurrenceInterval: task.recurrenceInterval || null,
-    status: task.status || "todo",
-    isShared: false,
-    userUuid: task.userUuid,
   };
-
-  const updatedTasks = [...tasks, newTask];
-  saveTasks(updatedTasks);
+  tasks.push(newTask);
+  saveTasks(tasks);
   return newTask;
 }
 
-export function updateTask(id: number, updates: Partial<Task>): Task | undefined {
-  const allTasks = getTasks(updates.userUuid || '');
-  const index = allTasks.findIndex(t => t.id === id);
+export function updateTask(id: number, updates: Partial<InsertTask>) {
+  const tasks = getTasks();
+  const index = tasks.findIndex(t => t.id === id);
   if (index === -1) return;
 
-  const task = allTasks[index];
+  const task = tasks[index];
   const updatedTask = { ...task, ...updates };
 
-  allTasks[index] = updatedTask;
-  saveTasks(allTasks);
+  // If marking as completed and task is recurring, update lastCompleted and calculate next due date
+  if (updates.completed && !task.completed && task.recurrence !== "none") {
+    updatedTask.lastCompleted = new Date();
+    updatedTask.nextDue = calculateNextDueDate(updatedTask);
+    updatedTask.completed = false; // Reset completion for next occurrence
+  }
+
+  tasks[index] = updatedTask;
+  saveTasks(tasks);
   return updatedTask;
 }
 
 export function deleteTask(id: number) {
-  const tasks = getTasks('');
+  const tasks = getTasks();
+  const taskToDelete = tasks.find(t => t.id === id);
+  if (taskToDelete) {
+    // Move to trash
+    const deletedTasks = getDeletedTasks();
+    const deletedTask: DeletedTask = {
+      ...taskToDelete,
+      deletedAt: new Date().toISOString(),
+    };
+    deletedTasks.push(deletedTask);
+    saveDeletedTasks(deletedTasks);
+  }
+
   const filtered = tasks.filter(t => t.id !== id);
   saveTasks(filtered);
-}
-
-export function toggleTaskSharing(id: number, isShared: boolean): Task | undefined {
-  const tasks = getTasks('');
-  const task = tasks.find(t => t.id === id);
-  if (!task) return;
-
-  return updateTask(id, { isShared });
 }
 
 export function restoreTask(id: number) {
@@ -170,7 +183,7 @@ export function restoreTask(id: number) {
 
   // Add back to active tasks
   const { deletedAt, ...restoredTask } = taskToRestore;
-  const tasks = getTasks(restoredTask.userUuid); 
+  const tasks = getTasks();
   tasks.push(restoredTask);
   saveTasks(tasks);
 

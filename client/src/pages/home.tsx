@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/task-list";
@@ -7,65 +7,28 @@ import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { TrashBin } from "@/components/trash-bin";
 import { VoiceInput } from "@/components/voice-input";
 import { DateFilter } from "@/components/date-filter";
-import { UserProfile } from "@/components/user-profile";
 import { getTasks, addTask, updateTask, deleteTask } from "@/lib/tasks";
 import type { Task, InsertTask } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { suggestTaskPriority } from "@/lib/task-analyzer";
 import { startOfDay, endOfDay, isWithinInterval } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const [view, setView] = useState<"list" | "kanban">("list");
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
-  const [userUuid, setUserUuid] = useState<string>("");
-
-  useEffect(() => {
-    const storedUuid = localStorage.getItem("userUuid");
-    if (storedUuid) {
-      setUserUuid(storedUuid);
-    } else {
-      const newUuid = crypto.randomUUID();
-      localStorage.setItem("userUuid", newUuid);
-      setUserUuid(newUuid);
-    }
-  }, []);
 
   const { data: tasks = [], refetch } = useQuery({
-    queryKey: ["/api/tasks", userUuid],
-    queryFn: () => getTasks(userUuid),
-    enabled: !!userUuid,
+    queryKey: ["/api/tasks"],
+    queryFn: getTasks,
   });
 
-  const handleAddTask = async (data: InsertTask) => {
-    try {
-      const taskWithUuid = {
-        ...data,
-        userUuid,
-        isShared: false,
-      };
-
-      const newTask = await addTask(taskWithUuid);
-
-      queryClient.setQueryData<Task[]>(["/api/tasks", userUuid], (oldTasks) => {
-        return [...(oldTasks || []), newTask];
-      });
-
-      toast({
-        title: "Success",
-        description: "Task added successfully",
-      });
-    } catch (error) {
-      console.error('Error adding task:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add task. Please try again.",
-        variant: "destructive",
-      });
-    }
+  const handleAddTask = (data: InsertTask) => {
+    const newTask = addTask(data);
+    queryClient.setQueryData<Task[]>(["/api/tasks"], (oldTasks) => {
+      return [...(oldTasks || []), newTask];
+    });
   };
 
   const handleVoiceInput = (transcript: string) => {
@@ -79,9 +42,7 @@ export default function Home() {
       category: "other",
       timeSpent: 0,
       xpEarned: 0,
-      dueDate: new Date(),
-      userUuid,
-      isShared: false
+      dueDate: new Date()
     };
     handleAddTask(newTask);
   };
@@ -95,7 +56,7 @@ export default function Home() {
       status: !task.completed ? "done" : task.status 
     });
     if (updated) {
-      queryClient.setQueryData<Task[]>(["/api/tasks", userUuid], prev => 
+      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
         prev?.map(t => t.id === id ? updated : t) || []
       );
     }
@@ -104,7 +65,7 @@ export default function Home() {
   const handleUpdateStatus = (id: number, status: Task["status"]) => {
     const updated = updateTask(id, { status });
     if (updated) {
-      queryClient.setQueryData<Task[]>(["/api/tasks", userUuid], prev => 
+      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
         prev?.map(t => t.id === id ? updated : t) || []
       );
     }
@@ -112,17 +73,17 @@ export default function Home() {
 
   const handleDeleteTask = (id: number) => {
     deleteTask(id);
-    queryClient.setQueryData<Task[]>(["/api/tasks", userUuid], prev => 
+    queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
       prev?.filter(t => t.id !== id) || []
     );
   };
 
   const handleImportTasks = (importedTasks: Task[]) => {
-    queryClient.setQueryData<Task[]>(["/api/tasks", userUuid], importedTasks);
+    queryClient.setQueryData<Task[]>(["/api/tasks"], importedTasks);
   };
 
   const handleRestoreTask = (task: Task) => {
-    queryClient.setQueryData<Task[]>(["/api/tasks", userUuid], prev => 
+    queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
       [...(prev || []), task]
     );
   };
@@ -130,7 +91,7 @@ export default function Home() {
   const handleTimeUpdate = (taskId: number, timeSpent: number) => {
     const updated = updateTask(taskId, { timeSpent });
     if (updated) {
-      queryClient.setQueryData<Task[]>(["/api/tasks", userUuid], prev => 
+      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
         prev?.map(t => t.id === taskId ? updated : t) || []
       );
     }
@@ -138,7 +99,7 @@ export default function Home() {
 
   const filteredTasks = selectedDate
     ? tasks.filter(task => {
-        const taskDate = new Date(task.dueDate || task.createdAt);
+        const taskDate = new Date(task.dueDate);
         return isWithinInterval(taskDate, {
           start: startOfDay(selectedDate),
           end: endOfDay(selectedDate)
@@ -152,7 +113,6 @@ export default function Home() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold">Task Manager</h1>
           <div className="flex items-center gap-2">
-            <UserProfile />
             <VoiceInput onTranscript={handleVoiceInput} />
             <ThemeToggle />
           </div>
@@ -170,7 +130,7 @@ export default function Home() {
           <TabsContent value="tasks">
             <div className="grid gap-8 md:grid-cols-[350px,1fr]">
               <div>
-                <TaskForm onSubmit={handleAddTask} userUuid={userUuid} />
+                <TaskForm onSubmit={handleAddTask} />
               </div>
               <div>
                 <div className="mb-4">
