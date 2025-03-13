@@ -79,10 +79,21 @@ function calculateNextDueDate(task: Task): Date | null {
       return addMonths(baseDate, 1);
     case "custom":
       if (!task.recurrenceInterval) return null;
-      const [amount, unit] = task.recurrenceInterval.split(" ");
+      // Handle numeric-only input (treat as days)
+      if (!isNaN(Number(task.recurrenceInterval))) {
+        const num = parseInt(task.recurrenceInterval);
+        return addDays(baseDate, num);
+      }
+      
+      const parts = task.recurrenceInterval.split(" ");
+      if (parts.length < 2) return addDays(baseDate, 1); // Default to 1 day if format is invalid
+      
+      const [amount, unit] = parts;
       const num = parseInt(amount);
-      if (isNaN(num)) return null;
-
+      if (isNaN(num)) return addDays(baseDate, 1); // Default to 1 day if amount is invalid
+      
+      if (!unit) return addDays(baseDate, num); // If no unit specified, assume days
+      
       switch (unit.toLowerCase()) {
         case "day":
         case "days":

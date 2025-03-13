@@ -386,7 +386,7 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
                 {form.watch("recurrence") === "daily" && "Repeats daily"}
                 {form.watch("recurrence") === "weekly" && "Repeats weekly"}
                 {form.watch("recurrence") === "monthly" && "Repeats monthly"}
-                {form.watch("recurrence") === "custom" && `Repeats every ${form.watch("recurrenceInterval") || 1} day(s)`}
+                {form.watch("recurrence") === "custom" && `Repeats every ${form.watch("recurrenceInterval") ? form.watch("recurrenceInterval") : "1"} day(s)`}
               </h4>
             </div>
             
@@ -399,8 +399,9 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
                   
                   let nextDate: Date;
                   const recurrence = form.watch("recurrence");
-                  const interval = form.watch("recurrenceInterval") ? 
-                    parseInt(form.watch("recurrenceInterval"), 10) : 1;
+                  const recurrenceInterval = form.watch("recurrenceInterval");
+                  const interval = recurrenceInterval && typeof recurrenceInterval === 'string' ? 
+                    parseInt(recurrenceInterval, 10) : 1;
                   
                   switch (recurrence) {
                     case "daily":
