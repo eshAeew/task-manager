@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, Plus } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,14 +11,32 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { categoryIcons } from "@shared/schema";
 import { TaskTimer } from "@/components/task-timer";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [view, setView] = useState<"day" | "timeline">("day");
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: tasks = [] } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
   });
+
+  // Handle time update
+  const handleTimeUpdate = (taskId: number, timeSpent: number) => {
+    // Update the task in the cache
+    queryClient.setQueryData<Task[]>(["/api/tasks"], (oldTasks = []) => {
+      return oldTasks.map(task => 
+        task.id === taskId ? { ...task, timeSpent } : task
+      );
+    });
+
+    toast({
+      title: "Time updated",
+      description: "Task time has been updated successfully.",
+    });
+  };
 
   // Format time for display
   const formatTime = (time: string | Date) => {
@@ -206,7 +224,10 @@ export default function CalendarPage() {
                                   </p>
                                 )}
 
-                                <TaskTimer task={task} className="mt-2" />
+                                <TaskTimer 
+                                  task={task} 
+                                  onTimeUpdate={handleTimeUpdate}
+                                />
                               </div>
                             </div>
                           </CardContent>
