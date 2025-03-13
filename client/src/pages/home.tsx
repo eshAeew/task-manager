@@ -7,6 +7,7 @@ import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { TrashBin } from "@/components/trash-bin";
 import { VoiceInput } from "@/components/voice-input";
 import { DateFilter } from "@/components/date-filter";
+import { UserProfile } from "@/components/user-profile";
 import { getTasks, addTask, updateTask, deleteTask } from "@/lib/tasks";
 import type { Task, InsertTask } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -113,6 +114,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold">Task Manager</h1>
           <div className="flex items-center gap-2">
+            <UserProfile />
             <VoiceInput onTranscript={handleVoiceInput} />
             <ThemeToggle />
           </div>
