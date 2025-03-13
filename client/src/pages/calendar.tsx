@@ -1,21 +1,33 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, Plus } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, Plus, Filter, BarChart } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Task } from "@shared/schema";
-import { format, isToday, isSameDay, addDays, subDays, startOfDay, endOfDay, parseISO } from "date-fns";
+import { format, isToday, isSameDay, addDays, subDays, startOfDay, endOfDay, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { categoryIcons } from "@shared/schema";
 import { TaskTimer } from "@/components/task-timer";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { TaskForm } from "@/components/task-form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [view, setView] = useState<"day" | "timeline">("day");
+  const [view, setView] = useState<"day" | "week" | "timeline">("day");
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterPriority, setFilterPriority] = useState<string>("all");
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -25,7 +37,6 @@ export default function CalendarPage() {
 
   // Handle time update
   const handleTimeUpdate = (taskId: number, timeSpent: number) => {
-    // Update the task in the cache
     queryClient.setQueryData<Task[]>(["/api/tasks"], (oldTasks = []) => {
       return oldTasks.map(task => 
         task.id === taskId ? { ...task, timeSpent } : task
@@ -43,16 +54,32 @@ export default function CalendarPage() {
     return format(typeof time === 'string' ? parseISO(time) : time, 'h:mm a');
   };
 
-  // Get tasks for selected date
-  const tasksForSelectedDate = tasks.filter(task => {
-    if (task.dueDate) {
-      return isSameDay(new Date(task.dueDate), selectedDate);
+  // Get tasks for selected date or week
+  const getTasksForPeriod = () => {
+    if (view === "week") {
+      const start = startOfWeek(selectedDate);
+      const end = endOfWeek(selectedDate);
+      return tasks.filter(task => {
+        if (!task.dueDate) return false;
+        const taskDate = new Date(task.dueDate);
+        return taskDate >= start && taskDate <= end;
+      });
     }
-    return false;
+    return tasks.filter(task => {
+      if (!task.dueDate) return false;
+      return isSameDay(new Date(task.dueDate), selectedDate);
+    });
+  };
+
+  // Apply filters
+  const filteredTasks = getTasksForPeriod().filter(task => {
+    const matchesCategory = filterCategory === "all" || task.category === filterCategory;
+    const matchesPriority = filterPriority === "all" || task.priority === filterPriority;
+    return matchesCategory && matchesPriority;
   });
 
   // Group tasks by hour for timeline view
-  const timelineGroups = tasksForSelectedDate.reduce((acc, task) => {
+  const timelineGroups = filteredTasks.reduce((acc, task) => {
     if (task.dueDate) {
       const hour = format(new Date(task.dueDate), 'HH:00');
       if (!acc[hour]) {
@@ -73,6 +100,21 @@ export default function CalendarPage() {
   const goToNextDay = () => setSelectedDate(addDays(selectedDate, 1));
   const goToToday = () => setSelectedDate(new Date());
 
+  // Task statistics for the current view
+  const taskStats = {
+    total: filteredTasks.length,
+    completed: filteredTasks.filter(t => t.completed).length,
+    high: filteredTasks.filter(t => t.priority === 'high').length,
+    medium: filteredTasks.filter(t => t.priority === 'medium').length,
+    low: filteredTasks.filter(t => t.priority === 'low').length,
+  };
+
+  // Get days for week view
+  const weekDays = view === "week" ? eachDayOfInterval({
+    start: startOfWeek(selectedDate),
+    end: endOfWeek(selectedDate)
+  }) : [];
+
   // Get task counts for each date
   const tasksByDate = tasks.reduce((acc, task) => {
     if (task.dueDate) {
@@ -92,15 +134,63 @@ export default function CalendarPage() {
             Calendar
           </h1>
           <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => setView(view === "day" ? "timeline" : "day")}>
-              {view === "day" ? "Switch to Timeline" : "Switch to Day View"}
-            </Button>
-            <Button>
+            <Select value={view} onValueChange={(v: "day" | "week" | "timeline") => setView(v)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select view" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day">Day View</SelectItem>
+                <SelectItem value="week">Week View</SelectItem>
+                <SelectItem value="timeline">Timeline</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={() => setIsAddingTask(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Task
             </Button>
           </div>
         </div>
+
+        {/* Filters */}
+        <Card className="p-4">
+          <div className="flex flex-wrap gap-4">
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="work">Work</SelectItem>
+                <SelectItem value="personal">Personal</SelectItem>
+                <SelectItem value="study">Study</SelectItem>
+                <SelectItem value="shopping">Shopping</SelectItem>
+                <SelectItem value="health">Health</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filterPriority} onValueChange={setFilterPriority}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priorities</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Task Statistics */}
+            <div className="flex gap-2 ml-auto">
+              <Badge variant="outline">{taskStats.total} Total</Badge>
+              <Badge variant="secondary">{taskStats.completed} Done</Badge>
+              <Badge variant="destructive">{taskStats.high} High</Badge>
+              <Badge variant="warning">{taskStats.medium} Medium</Badge>
+              <Badge variant="default">{taskStats.low} Low</Badge>
+            </div>
+          </div>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Calendar Section */}
@@ -166,22 +256,124 @@ export default function CalendarPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
-                  {format(selectedDate, 'MMMM d, yyyy')}
-                  {isToday(selectedDate) && (
-                    <Badge variant="outline" className="ml-2">Today</Badge>
+                  {view === "week" ? (
+                    <span>
+                      Week of {format(startOfWeek(selectedDate), 'MMM d')} - {format(endOfWeek(selectedDate), 'MMM d, yyyy')}
+                    </span>
+                  ) : (
+                    <span>
+                      {format(selectedDate, 'MMMM d, yyyy')}
+                      {isToday(selectedDate) && (
+                        <Badge variant="outline" className="ml-2">Today</Badge>
+                      )}
+                    </span>
                   )}
                 </CardTitle>
                 <Badge variant="secondary">
-                  {tasksForSelectedDate.length} {tasksForSelectedDate.length === 1 ? 'task' : 'tasks'}
+                  {filteredTasks.length} {filteredTasks.length === 1 ? 'task' : 'tasks'}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent>
-              {view === "day" ? (
+              {view === "week" ? (
+                <ScrollArea className="h-[600px]">
+                  <div className="space-y-4">
+                    {weekDays.map(day => {
+                      const dayTasks = filteredTasks.filter(task => 
+                        task.dueDate && isSameDay(new Date(task.dueDate), day)
+                      );
+                      return (
+                        <div key={format(day, 'yyyy-MM-dd')} className="space-y-2">
+                          <h3 className="font-medium">
+                            {format(day, 'EEEE, MMM d')}
+                            {isToday(day) && (
+                              <Badge variant="outline" className="ml-2">Today</Badge>
+                            )}
+                          </h3>
+                          {dayTasks.length > 0 ? (
+                            <div className="space-y-2">
+                              {dayTasks.map(task => (
+                                <Card key={task.id} className="bg-muted/50">
+                                  <CardContent className="p-4">
+                                    <div className="flex items-start gap-4">
+                                      <Checkbox checked={task.completed} />
+                                      <div className="flex-1">
+                                        <div className="flex items-start justify-between gap-2">
+                                          <h3 className="font-medium">{task.title}</h3>
+                                          <Badge className={
+                                            task.priority === 'high' ? 'bg-red-500' :
+                                            task.priority === 'medium' ? 'bg-yellow-500' :
+                                            'bg-blue-500'
+                                          }>
+                                            {task.priority}
+                                          </Badge>
+                                        </div>
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                          {task.category && (
+                                            <Badge variant="outline" className="flex items-center gap-1">
+                                              <span>{categoryIcons[task.category]}</span>
+                                              {task.category}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        {task.dueDate && (
+                                          <p className="mt-2 text-sm text-muted-foreground">
+                                            Due at {formatTime(task.dueDate)}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">No tasks scheduled</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              ) : view === "timeline" ? (
+                <ScrollArea className="h-[600px]">
+                  <div className="space-y-1">
+                    {hours.map((hour) => (
+                      <div key={hour} className="flex items-start gap-4 p-2 rounded hover:bg-muted/50">
+                        <div className="w-16 text-sm text-muted-foreground">
+                          {format(parseISO(`2000-01-01T${hour}`), 'h a')}
+                        </div>
+                        <div className="flex-1">
+                          {timelineGroups[hour]?.map((task) => (
+                            <Card 
+                              key={task.id} 
+                              className={`mb-2 ${
+                                task.priority === 'high' ? 'border-red-500' :
+                                task.priority === 'medium' ? 'border-yellow-500' :
+                                'border-blue-500'
+                              } border-l-4`}
+                            >
+                              <CardContent className="p-2">
+                                <div className="flex items-center gap-2">
+                                  <Checkbox checked={task.completed} />
+                                  <span className="font-medium">{task.title}</span>
+                                  <Badge variant="outline" className="ml-auto">
+                                    {task.priority}
+                                  </Badge>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              ) : (
                 <ScrollArea className="h-[600px] pr-4">
-                  {tasksForSelectedDate.length > 0 ? (
+                  {filteredTasks.length > 0 ? (
                     <div className="space-y-4">
-                      {tasksForSelectedDate.map((task) => (
+                      {filteredTasks.map((task) => (
                         <Card key={task.id} className="bg-muted/50">
                           <CardContent className="p-4">
                             <div className="flex items-start gap-4">
@@ -243,38 +435,32 @@ export default function CalendarPage() {
                     </div>
                   )}
                 </ScrollArea>
-              ) : (
-                <ScrollArea className="h-[600px]">
-                  <div className="space-y-1">
-                    {hours.map((hour) => (
-                      <div key={hour} className="flex items-start gap-4 p-2 rounded hover:bg-muted/50">
-                        <div className="w-16 text-sm text-muted-foreground">
-                          {format(parseISO(`2000-01-01T${hour}`), 'h a')}
-                        </div>
-                        <div className="flex-1">
-                          {timelineGroups[hour]?.map((task) => (
-                            <Card key={task.id} className="mb-2 bg-muted/50">
-                              <CardContent className="p-2">
-                                <div className="flex items-center gap-2">
-                                  <Checkbox checked={task.completed} />
-                                  <span className="font-medium">{task.title}</span>
-                                  <Badge variant="outline" className="ml-auto">
-                                    {task.priority}
-                                  </Badge>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
               )}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Add Task Dialog */}
+      <Dialog open={isAddingTask} onOpenChange={setIsAddingTask}>
+        <DialogContent className="max-w-lg">
+          <DialogTitle>Add New Task</DialogTitle>
+          <TaskForm
+            onSubmit={(task) => {
+              // Handle task creation
+              setIsAddingTask(false);
+              toast({
+                title: "Task created",
+                description: "New task has been added successfully.",
+              });
+            }}
+            onCancel={() => setIsAddingTask(false)}
+            defaultValues={{
+              dueDate: selectedDate,
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
