@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { getTasks } from "@/lib/tasks";
 import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import {
   Cell,
 } from "recharts";
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, isSameDay } from "date-fns";
+import { categoryIcons, Task } from "@shared/schema";
 
 export default function DashboardPage() {
   const { data: tasks = [] } = useQuery({
@@ -86,6 +88,26 @@ export default function DashboardPage() {
     });
   };
 
+  // Get tasks by category
+  const tasksByCategory = tasks.reduce((acc, task) => {
+    const category = task.category || 'other';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(task);
+    return acc;
+  }, {} as Record<string, Task[]>);
+
+  // Format tasks by category for display
+  const categoryTaskCounts = Object.entries(tasksByCategory).map(([category, tasks]) => ({
+    category,
+    count: tasks.length,
+  }));
+
+  // State for calendar
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | undefined>(new Date());
+  const tasksOnSelectedDate = selectedCalendarDate ? getDueTasks(selectedCalendarDate) : [];
+
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-4xl font-bold mb-8">Dashboard</h1>
@@ -95,6 +117,7 @@ export default function DashboardPage() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="detailed">Detailed Analytics</TabsTrigger>
           <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+          <TabsTrigger value="categories">Categories</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -175,29 +198,130 @@ export default function DashboardPage() {
         </TabsContent>
 
         <TabsContent value="calendar">
-          <Card>
-            <CardHeader>
-              <CardTitle>Task Calendar</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Calendar
-                mode="single"
-                selected={new Date()}
-                className="rounded-md border"
-                modifiers={{
-                  highlight: (date) => getDueTasks(date).length > 0
-                }}
-                modifiersStyles={{
-                  highlight: { backgroundColor: "#3B82F6", color: "white" }
-                }}
-              />
-              <div className="mt-4">
-                <p className="text-sm text-muted-foreground">
-                  Days with tasks due are highlighted in blue
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Task Calendar</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Calendar
+                  mode="single"
+                  selected={selectedCalendarDate}
+                  onSelect={setSelectedCalendarDate}
+                  className="rounded-md border"
+                  modifiers={{
+                    highlight: (date) => getDueTasks(date).length > 0
+                  }}
+                  modifiersStyles={{
+                    highlight: { backgroundColor: "#3B82F6", color: "white" }
+                  }}
+                />
+                <div className="mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Days with tasks due are highlighted in blue
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  Tasks due on {selectedCalendarDate ? format(selectedCalendarDate, 'MMMM d, yyyy') : 'selected date'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="max-h-[300px] overflow-auto pr-2">
+                  {tasksOnSelectedDate.length > 0 ? (
+                    <div className="space-y-3">
+                      {tasksOnSelectedDate.map(task => (
+                        <div key={task.id} className="p-3 border rounded-md flex justify-between items-start">
+                          <div>
+                            <div className="font-medium">{task.title}</div>
+                            <div className="text-sm text-muted-foreground">{task.category}</div>
+                          </div>
+                          <div className={`px-2 py-1 text-xs font-medium rounded ${
+                            task.priority === 'high' ? 'bg-red-100 text-red-800' :
+                            task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {task.priority}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground">
+                      No tasks due on this date
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="categories">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Tasks by Category</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={categoryTaskCounts} layout="vertical">
+                      <XAxis type="number" />
+                      <YAxis dataKey="category" type="category" width={100} />
+                      <Tooltip />
+                      <Bar dataKey="count" fill="#3B82F6" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Category Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {Object.entries(tasksByCategory).map(([category, categoryTasks]) => (
+                    <div key={category} className="p-4 border rounded-md">
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-medium text-lg flex items-center gap-2">
+                          {categoryIcons[category as keyof typeof categoryIcons]} {category}
+                        </h3>
+                        <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs font-medium">
+                          {categoryTasks.length} tasks
+                        </span>
+                      </div>
+                      <div className="max-h-[120px] overflow-auto">
+                        <ul className="space-y-1 text-sm">
+                          {categoryTasks.slice(0, 5).map(task => (
+                            <li key={task.id} className="flex justify-between">
+                              <span>{task.title}</span>
+                              <span className={`text-xs ${
+                                task.completed ? 'text-green-600' : 'text-amber-600'
+                              }`}>
+                                {task.completed ? 'Done' : 'Pending'}
+                              </span>
+                            </li>
+                          ))}
+                          {categoryTasks.length > 5 && (
+                            <li className="text-xs text-muted-foreground text-center pt-1">
+                              + {categoryTasks.length - 5} more tasks
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -17,15 +17,23 @@ export default function CalendarPage() {
     queryKey: ["/api/tasks"],
   });
 
-  // Get tasks for selected date based on when they were created
+  // Get tasks for selected date based on due date (or creation date if no due date)
   const tasksForSelectedDate = tasks.filter(task => {
+    if (task.dueDate) {
+      return isSameDay(new Date(task.dueDate), selectedDate);
+    } 
+    // Fallback to creation date if no due date is set
     const taskCreatedDate = task.createdAt ? new Date(task.createdAt) : null;
     return taskCreatedDate && isSameDay(taskCreatedDate, selectedDate);
   });
 
-  // Create a map of dates with tasks based on creation date
+  // Create a map of dates with tasks based on due date
   const taskDates = tasks.reduce((acc: Record<string, number>, task) => {
-    if (task.createdAt) {
+    if (task.dueDate) {
+      const dateStr = format(new Date(task.dueDate), 'yyyy-MM-dd');
+      acc[dateStr] = (acc[dateStr] || 0) + 1;
+    } else if (task.createdAt) {
+      // Fallback to creation date if no due date is set
       const dateStr = format(new Date(task.createdAt), 'yyyy-MM-dd');
       acc[dateStr] = (acc[dateStr] || 0) + 1;
     }
@@ -85,7 +93,7 @@ export default function CalendarPage() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>
-                Tasks created on {format(selectedDate, 'MMMM d, yyyy')}
+                Tasks for {format(selectedDate, 'MMMM d, yyyy')}
                 {isToday(selectedDate) && (
                   <Badge variant="outline" className="ml-2">Today</Badge>
                 )}
