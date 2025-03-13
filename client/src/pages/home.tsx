@@ -6,15 +6,18 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { TrashBin } from "@/components/trash-bin";
 import { VoiceInput } from "@/components/voice-input";
+import { DateFilter } from "@/components/date-filter";
 import { getTasks, addTask, updateTask, deleteTask } from "@/lib/tasks";
 import type { Task, InsertTask } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { suggestTaskPriority } from "@/lib/task-analyzer";
+import { startOfDay, endOfDay, isWithinInterval } from "date-fns";
 
 export default function Home() {
   const queryClient = useQueryClient();
   const [view, setView] = useState<"list" | "kanban">("list");
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>();
 
   const { data: tasks = [], refetch } = useQuery({
     queryKey: ["/api/tasks"],
@@ -39,7 +42,7 @@ export default function Home() {
       category: "other",
       timeSpent: 0,
       xpEarned: 0,
-      dueDate: new Date() // Set today as default due date
+      dueDate: new Date()
     };
     handleAddTask(newTask);
   };
@@ -94,6 +97,16 @@ export default function Home() {
     }
   };
 
+  const filteredTasks = selectedDate
+    ? tasks.filter(task => {
+        const taskDate = new Date(task.dueDate);
+        return isWithinInterval(taskDate, {
+          start: startOfDay(selectedDate),
+          end: endOfDay(selectedDate)
+        });
+      })
+    : tasks;
+
   return (
     <div className={`min-h-screen bg-background ${isFocusMode ? 'bg-black/95' : ''}`}>
       <div className="container mx-auto py-8 px-4">
@@ -120,8 +133,14 @@ export default function Home() {
                 <TaskForm onSubmit={handleAddTask} />
               </div>
               <div>
+                <div className="mb-4">
+                  <DateFilter
+                    selectedDate={selectedDate}
+                    onDateSelect={setSelectedDate}
+                  />
+                </div>
                 <TaskList 
-                  tasks={tasks}
+                  tasks={filteredTasks}
                   onToggleComplete={handleToggleComplete}
                   onDeleteTask={handleDeleteTask}
                   onImportTasks={handleImportTasks}
