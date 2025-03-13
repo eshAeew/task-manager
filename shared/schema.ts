@@ -8,24 +8,22 @@ export const tasks = pgTable("tasks", {
   priority: text("priority", { enum: ["low", "medium", "high"] }).notNull(),
   completed: boolean("completed").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  // Add time tracking
+  // Add user UUID and sharing
+  userUuid: text("user_uuid").notNull(),
+  isShared: boolean("is_shared").notNull().default(false),
+  // Existing fields...
   timeSpent: integer("time_spent").default(0),
   lastStarted: timestamp("last_started"),
-  // Add gamification
   xpEarned: integer("xp_earned").default(0),
-  // Add status for Kanban
   status: text("status", { 
     enum: ["todo", "in_progress", "done"] 
   }).notNull().default("todo"),
-  // Add categories and tags
   category: text("category", {
     enum: ["work", "personal", "study", "shopping", "health", "other"]
   }).notNull().default("other"),
   tags: text("tags").array(),
-  // Add file attachment
   attachmentUrl: text("attachment_url"),
   attachmentName: text("attachment_name"),
-  // Existing fields...
   recurrence: text("recurrence", { 
     enum: ["none", "daily", "weekly", "monthly", "custom"] 
   }).notNull().default("none"),
@@ -56,6 +54,8 @@ export const insertTaskSchema = createInsertSchema(tasks)
     timeSpent: true,
     lastStarted: true,
     xpEarned: true,
+    userUuid: true,
+    isShared: true,
   })
   .extend({
     title: z.string().min(1, "Title is required").max(100),
@@ -74,6 +74,8 @@ export const insertTaskSchema = createInsertSchema(tasks)
     timeSpent: z.number().int().default(0),
     lastStarted: z.date().optional(),
     xpEarned: z.number().int().default(0),
+    userUuid: z.string().uuid(),
+    isShared: z.boolean().default(false),
   });
 
 export type InsertTask = z.infer<typeof insertTaskSchema>;

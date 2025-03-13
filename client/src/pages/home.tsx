@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/task-list";
@@ -19,15 +19,33 @@ export default function Home() {
   const [view, setView] = useState<"list" | "kanban">("list");
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
+  const [userUuid, setUserUuid] = useState<string>("");
+
+  useEffect(() => {
+    const storedUuid = localStorage.getItem("userUuid");
+    if (storedUuid) {
+      setUserUuid(storedUuid);
+    } else {
+      const newUuid = crypto.randomUUID();
+      localStorage.setItem("userUuid", newUuid);
+      setUserUuid(newUuid);
+    }
+  }, []);
 
   const { data: tasks = [], refetch } = useQuery({
-    queryKey: ["/api/tasks"],
-    queryFn: getTasks,
+    queryKey: ["/api/tasks", userUuid],
+    queryFn: () => getTasks(userUuid),
+    enabled: !!userUuid,
   });
 
   const handleAddTask = (data: InsertTask) => {
-    const newTask = addTask(data);
-    queryClient.setQueryData<Task[]>(["/api/tasks"], (oldTasks) => {
+    const taskWithUuid = {
+      ...data,
+      userUuid,
+      isShared: false,
+    };
+    const newTask = addTask(taskWithUuid);
+    queryClient.setQueryData<Task[]>(["/api/tasks", userUuid], (oldTasks) => {
       return [...(oldTasks || []), newTask];
     });
   };
@@ -43,7 +61,9 @@ export default function Home() {
       category: "other",
       timeSpent: 0,
       xpEarned: 0,
-      dueDate: new Date()
+      dueDate: new Date(),
+      userUuid,
+      isShared: false
     };
     handleAddTask(newTask);
   };
@@ -57,7 +77,7 @@ export default function Home() {
       status: !task.completed ? "done" : task.status 
     });
     if (updated) {
-      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
+      queryClient.setQueryData<Task[]>(["/api/tasks", userUuid], prev => 
         prev?.map(t => t.id === id ? updated : t) || []
       );
     }
@@ -66,7 +86,7 @@ export default function Home() {
   const handleUpdateStatus = (id: number, status: Task["status"]) => {
     const updated = updateTask(id, { status });
     if (updated) {
-      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
+      queryClient.setQueryData<Task[]>(["/api/tasks", userUuid], prev => 
         prev?.map(t => t.id === id ? updated : t) || []
       );
     }
@@ -74,17 +94,17 @@ export default function Home() {
 
   const handleDeleteTask = (id: number) => {
     deleteTask(id);
-    queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
+    queryClient.setQueryData<Task[]>(["/api/tasks", userUuid], prev => 
       prev?.filter(t => t.id !== id) || []
     );
   };
 
   const handleImportTasks = (importedTasks: Task[]) => {
-    queryClient.setQueryData<Task[]>(["/api/tasks"], importedTasks);
+    queryClient.setQueryData<Task[]>(["/api/tasks", userUuid], importedTasks);
   };
 
   const handleRestoreTask = (task: Task) => {
-    queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
+    queryClient.setQueryData<Task[]>(["/api/tasks", userUuid], prev => 
       [...(prev || []), task]
     );
   };
@@ -92,7 +112,7 @@ export default function Home() {
   const handleTimeUpdate = (taskId: number, timeSpent: number) => {
     const updated = updateTask(taskId, { timeSpent });
     if (updated) {
-      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
+      queryClient.setQueryData<Task[]>(["/api/tasks", userUuid], prev => 
         prev?.map(t => t.id === taskId ? updated : t) || []
       );
     }
@@ -100,7 +120,7 @@ export default function Home() {
 
   const filteredTasks = selectedDate
     ? tasks.filter(task => {
-        const taskDate = new Date(task.dueDate);
+        const taskDate = new Date(task.dueDate || task.createdAt);
         return isWithinInterval(taskDate, {
           start: startOfDay(selectedDate),
           end: endOfDay(selectedDate)
