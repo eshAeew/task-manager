@@ -359,7 +359,7 @@ export default function SudokuPage({ isBreakActive, onBreakEnd }: SudokuGameProp
   };
 
   // Change difficulty level
-  const changeDifficulty = (newDifficulty: SudokuDifficulty) => {
+  const changeDifficulty = (newDifficulty: "easy" | "medium" | "hard") => {
     if (newDifficulty === difficulty) return;
     
     setDifficulty(newDifficulty);
@@ -460,9 +460,11 @@ export default function SudokuPage({ isBreakActive, onBreakEnd }: SudokuGameProp
               )}
             </div>
           </div>
-          
-          <Tabs value={tabView} onValueChange={(val) => setTabView(val as "game" | "help")} className="mt-2">
-            <TabsList className="grid w-full grid-cols-2">
+        </CardHeader>
+        
+        <CardContent className="pt-2">
+          <Tabs defaultValue="game" value={tabView} onValueChange={(val) => setTabView(val as "game" | "help")}>
+            <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="game">
                 <Dices className="h-4 w-4 mr-2" />
                 Game
@@ -472,245 +474,244 @@ export default function SudokuPage({ isBreakActive, onBreakEnd }: SudokuGameProp
                 How to Play
               </TabsTrigger>
             </TabsList>
-          </Tabs>
-        </CardHeader>
-        
-        <CardContent className="pt-2">
-          <TabsContent value="game" className="mt-0 space-y-4">
-            {/* Game Progress */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-sm">
-                <span>Progress</span>
-                <span>{progress}%</span>
-              </div>
-              <Progress value={progress} className="h-2" />
-            </div>
             
-            {/* Sudoku Board */}
-            <div className="relative">
-              <div 
-                className="grid grid-cols-9 gap-0.5 border-2 border-slate-800 rounded-md mb-6 bg-slate-900 shadow-lg"
-                style={{ aspectRatio: '1/1' }}
-              >
-                {board.map((row, rowIndex) =>
-                  row.map((cell, colIndex) => {
-                    const isSelected = selectedCell && selectedCell[0] === rowIndex && selectedCell[1] === colIndex;
-                    const isPrefilled = game.puzzle[rowIndex][colIndex] !== 0;
-                    const isCorrect = cell !== 0 && cell === game.solution[rowIndex][colIndex];
-                    const isIncorrect = cell !== 0 && cell !== game.solution[rowIndex][colIndex];
-                    const boxRow = Math.floor(rowIndex / 3);
-                    const boxCol = Math.floor(colIndex / 3);
-                    const isOddBox = (boxRow + boxCol) % 2 === 1;
-                    
-                    return (
-                      <div
-                        key={`${rowIndex}-${colIndex}`}
-                        className={`
-                          flex items-center justify-center
-                          aspect-square cursor-pointer text-lg font-bold transition-all duration-150
-                          ${isSelected ? 'bg-primary/20 shadow-inner' : isOddBox ? 'bg-slate-50' : 'bg-white'}
-                          ${isPrefilled ? 'text-slate-700 font-extrabold' : isCorrect ? 'text-green-600' : isIncorrect ? 'text-red-500' : 'text-primary'}
-                          ${(rowIndex + 1) % 3 === 0 && rowIndex < 8 ? 'border-b-2 border-slate-800' : 'border-b border-slate-200'}
-                          ${(colIndex + 1) % 3 === 0 && colIndex < 8 ? 'border-r-2 border-slate-800' : 'border-r border-slate-200'}
-                          hover:bg-blue-50
-                        `}
-                        onClick={() => handleCellSelect(rowIndex, colIndex)}
-                      >
-                        {cell !== 0 ? cell : ''}
-                      </div>
-                    );
-                  })
+            <TabsContent value="game" className="mt-0 space-y-4">
+              {/* Game Progress */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span>Progress</span>
+                  <span>{progress}%</span>
+                </div>
+                <Progress value={progress} className="h-2" />
+              </div>
+              
+              {/* Sudoku Board */}
+              <div className="relative">
+                <div 
+                  className="grid grid-cols-9 gap-0.5 border-2 border-slate-800 rounded-md mb-6 bg-slate-900 shadow-lg"
+                  style={{ aspectRatio: '1/1' }}
+                >
+                  {board.map((row, rowIndex) =>
+                    row.map((cell, colIndex) => {
+                      const isSelected = selectedCell && selectedCell[0] === rowIndex && selectedCell[1] === colIndex;
+                      const isPrefilled = game.puzzle[rowIndex][colIndex] !== 0;
+                      const isCorrect = cell !== 0 && cell === game.solution[rowIndex][colIndex];
+                      const isIncorrect = cell !== 0 && cell !== game.solution[rowIndex][colIndex];
+                      const boxRow = Math.floor(rowIndex / 3);
+                      const boxCol = Math.floor(colIndex / 3);
+                      const isOddBox = (boxRow + boxCol) % 2 === 1;
+                      
+                      return (
+                        <div
+                          key={`${rowIndex}-${colIndex}`}
+                          className={`
+                            flex items-center justify-center
+                            aspect-square cursor-pointer text-lg font-bold transition-all duration-150
+                            ${isSelected ? 'bg-primary/20 shadow-inner' : isOddBox ? 'bg-slate-50' : 'bg-white'}
+                            ${isPrefilled ? 'text-slate-700 font-extrabold' : isCorrect ? 'text-green-600' : isIncorrect ? 'text-red-500' : 'text-primary'}
+                            ${(rowIndex + 1) % 3 === 0 && rowIndex < 8 ? 'border-b-2 border-slate-800' : 'border-b border-slate-200'}
+                            ${(colIndex + 1) % 3 === 0 && colIndex < 8 ? 'border-r-2 border-slate-800' : 'border-r border-slate-200'}
+                            hover:bg-blue-50
+                          `}
+                          onClick={() => handleCellSelect(rowIndex, colIndex)}
+                        >
+                          {cell !== 0 ? cell : ''}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+                
+                {isComplete && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-md">
+                    <div className="text-center space-y-3 p-6 bg-green-50 rounded-lg border border-green-200 shadow-lg">
+                      <Sparkles className="h-12 w-12 text-yellow-500 mx-auto" />
+                      <h3 className="text-xl font-bold text-green-700">Level Complete!</h3>
+                      <p className="text-green-600">Moving to the next difficulty level...</p>
+                    </div>
+                  </div>
                 )}
               </div>
               
-              {isComplete && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-md">
-                  <div className="text-center space-y-3 p-6 bg-green-50 rounded-lg border border-green-200 shadow-lg">
-                    <Sparkles className="h-12 w-12 text-yellow-500 mx-auto" />
-                    <h3 className="text-xl font-bold text-green-700">Level Complete!</h3>
-                    <p className="text-green-600">Moving to the next difficulty level...</p>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Game Controls */}
-            <div className="space-y-4">
-              {/* Number Input Buttons */}
-              <div className="grid grid-cols-9 gap-1">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-                  <Button
-                    key={num}
-                    variant="outline"
-                    className="aspect-square text-lg font-bold p-0 hover:bg-blue-50 hover:border-blue-300"
-                    onClick={() => handleNumberInput(num)}
-                    disabled={isComplete || !selectedCell}
-                  >
-                    {num}
-                  </Button>
-                ))}
-              </div>
-              
-              {/* Game Action Buttons */}
-              <div className="flex justify-between mt-4">
-                <div className="space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={getHint}
-                    disabled={isComplete || !selectedCell}
-                    className="text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100"
-                  >
-                    <Sparkles className="h-4 w-4 mr-1" />
-                    Hint
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRestart}
-                    disabled={isComplete}
-                    className="text-slate-600 border-slate-200 hover:bg-slate-100"
-                  >
-                    <RefreshCw className="h-4 w-4 mr-1" />
-                    Restart
-                  </Button>
+              {/* Game Controls */}
+              <div className="space-y-4">
+                {/* Number Input Buttons */}
+                <div className="grid grid-cols-9 gap-1">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                    <Button
+                      key={num}
+                      variant="outline"
+                      className="aspect-square text-lg font-bold p-0 hover:bg-blue-50 hover:border-blue-300"
+                      onClick={() => handleNumberInput(num)}
+                      disabled={isComplete || !selectedCell}
+                    >
+                      {num}
+                    </Button>
+                  ))}
                 </div>
                 
-                <div className="space-x-2">
-                  {difficulty !== "easy" && (
+                {/* Game Action Buttons */}
+                <div className="flex justify-between mt-4">
+                  <div className="space-x-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => changeDifficulty("easy")}
-                      disabled={isComplete || difficulty === "easy"}
-                      className="text-green-600 border-green-200 bg-green-50 hover:bg-green-100"
-                    >
-                      Easy
-                    </Button>
-                  )}
-                  {difficulty !== "medium" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => changeDifficulty("medium")}
-                      disabled={isComplete || difficulty === "medium"}
+                      onClick={getHint}
+                      disabled={isComplete || !selectedCell}
                       className="text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100"
                     >
-                      Medium
+                      <Sparkles className="h-4 w-4 mr-1" />
+                      Hint
                     </Button>
-                  )}
-                  {difficulty !== "hard" && (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => changeDifficulty("hard")}
-                      disabled={isComplete || difficulty === "hard"}
-                      className="text-red-600 border-red-200 bg-red-50 hover:bg-red-100"
+                      onClick={handleRestart}
+                      disabled={isComplete}
+                      className="text-slate-600 border-slate-200 hover:bg-slate-100"
                     >
-                      Hard
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Restart
                     </Button>
-                  )}
-                </div>
-              </div>
-              
-              {/* Game Statistics */}
-              <div className="grid grid-cols-3 gap-2 mt-4">
-                <div className="p-2 bg-green-50 rounded border border-green-200 text-center">
-                  <div className="flex items-center justify-center mb-1">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mr-1" />
-                    <span className="text-sm font-medium text-green-700">Correct</span>
                   </div>
-                  <span className="text-lg font-bold text-green-600">{validMoves}</span>
-                </div>
-                <div className="p-2 bg-red-50 rounded border border-red-200 text-center">
-                  <div className="flex items-center justify-center mb-1">
-                    <XCircle className="h-4 w-4 text-red-500 mr-1" />
-                    <span className="text-sm font-medium text-red-700">Incorrect</span>
+                  
+                  <div className="space-x-2">
+                    {/* We use string comparison to avoid TypeScript errors */}
+                    {String(difficulty) !== "easy" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => changeDifficulty("easy")}
+                        disabled={isComplete}
+                        className="text-green-600 border-green-200 bg-green-50 hover:bg-green-100"
+                      >
+                        Easy
+                      </Button>
+                    )}
+                    {String(difficulty) !== "medium" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => changeDifficulty("medium")}
+                        disabled={isComplete}
+                        className="text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100"
+                      >
+                        Medium
+                      </Button>
+                    )}
+                    {String(difficulty) !== "hard" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => changeDifficulty("hard")}
+                        disabled={isComplete}
+                        className="text-red-600 border-red-200 bg-red-50 hover:bg-red-100"
+                      >
+                        Hard
+                      </Button>
+                    )}
                   </div>
-                  <span className="text-lg font-bold text-red-600">{invalidMoves}</span>
                 </div>
-                <div className="p-2 bg-amber-50 rounded border border-amber-200 text-center">
-                  <div className="flex items-center justify-center mb-1">
-                    <Sparkles className="h-4 w-4 text-amber-500 mr-1" />
-                    <span className="text-sm font-medium text-amber-700">Hints</span>
+                
+                {/* Game Statistics */}
+                <div className="grid grid-cols-3 gap-2 mt-4">
+                  <div className="p-2 bg-green-50 rounded border border-green-200 text-center">
+                    <div className="flex items-center justify-center mb-1">
+                      <CheckCircle2 className="h-4 w-4 text-green-500 mr-1" />
+                      <span className="text-sm font-medium text-green-700">Correct</span>
+                    </div>
+                    <span className="text-lg font-bold text-green-600">{validMoves}</span>
                   </div>
-                  <span className="text-lg font-bold text-amber-600">{hintsUsed}</span>
-                </div>
-              </div>
-              
-              {/* Progression Indicator */}
-              <div className="pt-2 mt-4 border-t border-slate-200">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <Brain className="h-5 w-5 text-green-500" />
-                    <ArrowRight className="h-4 w-4 mx-1" />
-                    <BrainCircuit className="h-5 w-5 text-amber-500" />
-                    <ArrowRight className="h-4 w-4 mx-1" />
-                    <Rocket className="h-5 w-5 text-red-500" />
+                  <div className="p-2 bg-red-50 rounded border border-red-200 text-center">
+                    <div className="flex items-center justify-center mb-1">
+                      <XCircle className="h-4 w-4 text-red-500 mr-1" />
+                      <span className="text-sm font-medium text-red-700">Incorrect</span>
+                    </div>
+                    <span className="text-lg font-bold text-red-600">{invalidMoves}</span>
                   </div>
-                  <span className="text-sm text-slate-500">Difficulty Progression</span>
+                  <div className="p-2 bg-amber-50 rounded border border-amber-200 text-center">
+                    <div className="flex items-center justify-center mb-1">
+                      <Sparkles className="h-4 w-4 text-amber-500 mr-1" />
+                      <span className="text-sm font-medium text-amber-700">Hints</span>
+                    </div>
+                    <span className="text-lg font-bold text-amber-600">{hintsUsed}</span>
+                  </div>
                 </div>
-                <Progress 
-                  value={difficultyStyles[difficulty].progress} 
-                  className="h-2 mt-1" 
-                />
+                
+                {/* Progression Indicator */}
+                <div className="pt-2 mt-4 border-t border-slate-200">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <Brain className="h-5 w-5 text-green-500" />
+                      <ArrowRight className="h-4 w-4 mx-1" />
+                      <BrainCircuit className="h-5 w-5 text-amber-500" />
+                      <ArrowRight className="h-4 w-4 mx-1" />
+                      <Rocket className="h-5 w-5 text-red-500" />
+                    </div>
+                    <span className="text-sm text-slate-500">Difficulty Progression</span>
+                  </div>
+                  <Progress 
+                    value={difficultyStyles[difficulty].progress} 
+                    className="h-2 mt-1" 
+                  />
+                </div>
               </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="help" className="mt-0 space-y-4">
-            <div className="space-y-4 text-slate-700">
-              <div>
-                <h3 className="font-bold text-lg mb-1">How to Play Sudoku</h3>
-                <p className="text-sm">
-                  Fill the 9×9 grid with digits so that each column, each row, and each of the nine 3×3 subgrids contain all of the digits from 1 to 9.
-                </p>
+            </TabsContent>
+            
+            <TabsContent value="help" className="mt-0 space-y-4">
+              <div className="space-y-4 text-slate-700">
+                <div>
+                  <h3 className="font-bold text-lg mb-1">How to Play Sudoku</h3>
+                  <p className="text-sm">
+                    Fill the 9×9 grid with digits so that each column, each row, and each of the nine 3×3 subgrids contain all of the digits from 1 to 9.
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-slate-800">Game Rules:</h4>
+                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                    <li>Each row must contain the numbers 1-9 without repetition</li>
+                    <li>Each column must contain the numbers 1-9 without repetition</li>
+                    <li>Each 3×3 box must contain the numbers 1-9 without repetition</li>
+                  </ul>
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-slate-800">Controls:</h4>
+                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                    <li>Click on an empty cell to select it</li>
+                    <li>Click a number button to place that number in the selected cell</li>
+                    <li>Click the same number again to remove it</li>
+                    <li>Use the Hint button if you're stuck (it will fill in the correct number)</li>
+                  </ul>
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-slate-800">Difficulty Levels:</h4>
+                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                    <li><span className="text-green-600 font-medium">Easy</span> - More numbers are provided, good for beginners</li>
+                    <li><span className="text-amber-600 font-medium">Medium</span> - Fewer starting numbers, requires more deduction</li>
+                    <li><span className="text-red-600 font-medium">Hard</span> - Minimal starting numbers, challenging puzzles</li>
+                  </ul>
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-slate-800">Tips:</h4>
+                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                    <li>Look for rows, columns, or boxes that are almost complete</li>
+                    <li>Use the process of elimination - if a number can only go in one place, it must go there</li>
+                    <li>Start with the easier puzzles and work your way up</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-blue-50 p-3 rounded-md border border-blue-200 mt-4">
+                  <p className="text-sm text-blue-700">
+                    <span className="font-semibold">Pro Tip:</span> Sudoku is not just fun, it's also great for your brain! It improves concentration, logical thinking, and problem-solving skills.
+                  </p>
+                </div>
               </div>
-              
-              <div className="space-y-2">
-                <h4 className="font-semibold text-slate-800">Game Rules:</h4>
-                <ul className="list-disc pl-5 space-y-1 text-sm">
-                  <li>Each row must contain the numbers 1-9 without repetition</li>
-                  <li>Each column must contain the numbers 1-9 without repetition</li>
-                  <li>Each 3×3 box must contain the numbers 1-9 without repetition</li>
-                </ul>
-              </div>
-              
-              <div className="space-y-2">
-                <h4 className="font-semibold text-slate-800">Controls:</h4>
-                <ul className="list-disc pl-5 space-y-1 text-sm">
-                  <li>Click on an empty cell to select it</li>
-                  <li>Click a number button to place that number in the selected cell</li>
-                  <li>Click the same number again to remove it</li>
-                  <li>Use the Hint button if you're stuck (it will fill in the correct number)</li>
-                </ul>
-              </div>
-              
-              <div className="space-y-2">
-                <h4 className="font-semibold text-slate-800">Difficulty Levels:</h4>
-                <ul className="list-disc pl-5 space-y-1 text-sm">
-                  <li><span className="text-green-600 font-medium">Easy</span> - More numbers are provided, good for beginners</li>
-                  <li><span className="text-amber-600 font-medium">Medium</span> - Fewer starting numbers, requires more deduction</li>
-                  <li><span className="text-red-600 font-medium">Hard</span> - Minimal starting numbers, challenging puzzles</li>
-                </ul>
-              </div>
-              
-              <div className="space-y-2">
-                <h4 className="font-semibold text-slate-800">Tips:</h4>
-                <ul className="list-disc pl-5 space-y-1 text-sm">
-                  <li>Look for rows, columns, or boxes that are almost complete</li>
-                  <li>Use the process of elimination - if a number can only go in one place, it must go there</li>
-                  <li>Start with the easier puzzles and work your way up</li>
-                </ul>
-              </div>
-              
-              <div className="bg-blue-50 p-3 rounded-md border border-blue-200 mt-4">
-                <p className="text-sm text-blue-700">
-                  <span className="font-semibold">Pro Tip:</span> Sudoku is not just fun, it's also great for your brain! It improves concentration, logical thinking, and problem-solving skills.
-                </p>
-              </div>
-            </div>
-          </TabsContent>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
