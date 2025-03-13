@@ -4,15 +4,19 @@ import { storage } from "./storage";
 import Parser from 'rss-parser';
 
 interface NewsItem {
-  title: string;
-  link: string;
-  pubDate: string;
+  title?: string;
+  link?: string;
+  pubDate?: string;
   content?: string;
   contentSnippet?: string;
   categories?: string[];
   source: string;
   sourceName: string;
+  category: string;
   guid?: string;
+  creator?: string;
+  summary?: string;
+  isoDate?: string;
   image?: string;
 }
 
@@ -146,10 +150,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       category: value.category
     }));
     
-    // Extract unique categories
-    const categories = [...new Set(sources.map(s => s.category))];
+    // Extract unique categories using a manual approach
+    const categoriesMap: Record<string, boolean> = {};
+    const uniqueCategories: string[] = [];
     
-    res.json({ sources, categories });
+    for (const source of sources) {
+      if (!categoriesMap[source.category]) {
+        categoriesMap[source.category] = true;
+        uniqueCategories.push(source.category);
+      }
+    }
+    
+    res.json({ sources, categories: uniqueCategories });
   });
 
   const httpServer = createServer(app);

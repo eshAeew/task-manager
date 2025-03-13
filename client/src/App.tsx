@@ -51,6 +51,15 @@ function Navigation() {
               Wikipedia
             </Button>
           </Link>
+          <Link href="/news">
+            <Button 
+              variant="ghost"
+              className="text-green-600 hover:text-green-800"
+            >
+              <Newspaper className="mr-2 h-4 w-4" />
+              News
+            </Button>
+          </Link>
           <Link href="/sudoku">
             <Button 
               variant="ghost"

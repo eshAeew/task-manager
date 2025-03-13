@@ -30,9 +30,9 @@ import {
 import { queryClient } from "@/lib/queryClient";
 
 interface NewsItem {
-  title: string;
-  link: string;
-  pubDate: string;
+  title?: string;
+  link?: string;
+  pubDate?: string;
   content?: string;
   contentSnippet?: string;
   categories?: string[];
@@ -40,7 +40,10 @@ interface NewsItem {
   sourceName: string;
   category: string;
   guid?: string;
+  creator?: string;
+  summary?: string;
   isoDate?: string;
+  image?: string;
 }
 
 interface NewsApiResponse {
