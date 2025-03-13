@@ -125,20 +125,42 @@ export default function DashboardPage() {
         </TabsContent>
 
         <TabsContent value="detailed">
-          <div className="grid gap-4">
+          <div className="grid gap-6 md:grid-cols-2">
             {/* Completion Rate by Priority */}
-            <Card>
-              <CardHeader>
+            <Card className="md:col-span-1">
+              <CardHeader className="pb-2">
                 <CardTitle>Completion Rate by Priority</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-[300px]">
+                <div className="h-[250px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={completionData}>
-                      <XAxis dataKey="priority" />
-                      <YAxis unit="%" />
-                      <Tooltip />
-                      <Bar dataKey="rate" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                    <BarChart data={completionData} layout="vertical" margin={{ left: 40, right: 30 }}>
+                      <XAxis type="number" unit="%" domain={[0, 100]} />
+                      <YAxis dataKey="priority" type="category" />
+                      <Tooltip 
+                        formatter={(value) => {
+                          if (typeof value === 'number') {
+                            return [`${value.toFixed(1)}%`, 'Completion Rate'];
+                          }
+                          return [value, 'Completion Rate'];
+                        }} 
+                      />
+                      <Bar 
+                        dataKey="rate" 
+                        fill="#3B82F6" 
+                        radius={[0, 4, 4, 0]} 
+                        label={{ 
+                          position: 'right', 
+                          formatter: (value) => {
+                            if (typeof value === 'number') {
+                              return `${value.toFixed(1)}%`;
+                            }
+                            return `${value}%`;
+                          },
+                          fill: '#6B7280',
+                          fontSize: 12
+                        }} 
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -146,18 +168,37 @@ export default function DashboardPage() {
             </Card>
 
             {/* Task Creation Distribution */}
-            <Card>
-              <CardHeader>
+            <Card className="md:col-span-1">
+              <CardHeader className="pb-2">
                 <CardTitle>Task Creation Distribution (This Month)</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-[200px]">
+                <div className="h-[250px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={tasksByDay}>
-                      <XAxis dataKey="date" />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip />
-                      <Bar dataKey="count" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                    <BarChart 
+                      data={tasksByDay} 
+                      margin={{ left: 10, right: 10, bottom: 20 }}
+                    >
+                      <XAxis 
+                        dataKey="date" 
+                        tickLine={false}
+                        axisLine={true}
+                        padding={{ left: 10, right: 10 }}
+                      />
+                      <YAxis 
+                        allowDecimals={false} 
+                        tickLine={false}
+                      />
+                      <Tooltip 
+                        formatter={(value) => [value, 'Tasks']}
+                        labelFormatter={(label) => `Day ${label}`}
+                      />
+                      <Bar 
+                        dataKey="count" 
+                        fill="#3B82F6" 
+                        radius={[4, 4, 0, 0]} 
+                        barSize={20}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>

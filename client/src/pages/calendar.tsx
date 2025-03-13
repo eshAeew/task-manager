@@ -116,7 +116,7 @@ export default function CalendarPage() {
                         <h3 className="font-medium flex items-center gap-2">
                           {task.title}
                           {task.completed && (
-                            <Badge variant="success">Completed</Badge>
+                            <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
                           )}
                         </h3>
                         <Badge className={
@@ -155,7 +155,7 @@ export default function CalendarPage() {
                         </div>
                       )}
 
-                      {task.timeSpent > 0 && (
+                      {task.timeSpent && task.timeSpent > 0 && (
                         <div className="text-sm text-muted-foreground">
                           Time spent: {task.timeSpent} minutes
                         </div>
