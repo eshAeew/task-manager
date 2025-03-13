@@ -13,9 +13,11 @@ import type { Task, InsertTask } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { suggestTaskPriority } from "@/lib/task-analyzer";
 import { startOfDay, endOfDay, isWithinInterval } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [view, setView] = useState<"list" | "kanban">("list");
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
@@ -38,16 +40,32 @@ export default function Home() {
     enabled: !!userUuid,
   });
 
-  const handleAddTask = (data: InsertTask) => {
-    const taskWithUuid = {
-      ...data,
-      userUuid,
-      isShared: false,
-    };
-    const newTask = addTask(taskWithUuid);
-    queryClient.setQueryData<Task[]>(["/api/tasks", userUuid], (oldTasks) => {
-      return [...(oldTasks || []), newTask];
-    });
+  const handleAddTask = async (data: InsertTask) => {
+    try {
+      const taskWithUuid = {
+        ...data,
+        userUuid,
+        isShared: false,
+      };
+
+      const newTask = await addTask(taskWithUuid);
+
+      queryClient.setQueryData<Task[]>(["/api/tasks", userUuid], (oldTasks) => {
+        return [...(oldTasks || []), newTask];
+      });
+
+      toast({
+        title: "Success",
+        description: "Task added successfully",
+      });
+    } catch (error) {
+      console.error('Error adding task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add task. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleVoiceInput = (transcript: string) => {
@@ -152,7 +170,7 @@ export default function Home() {
           <TabsContent value="tasks">
             <div className="grid gap-8 md:grid-cols-[350px,1fr]">
               <div>
-                <TaskForm onSubmit={handleAddTask} />
+                <TaskForm onSubmit={handleAddTask} userUuid={userUuid} />
               </div>
               <div>
                 <div className="mb-4">
