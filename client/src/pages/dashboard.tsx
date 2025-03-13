@@ -151,7 +151,7 @@ export default function DashboardPage() {
                         radius={[0, 4, 4, 0]} 
                         label={{ 
                           position: 'right', 
-                          formatter: (value) => {
+                          formatter: (value: any) => {
                             if (typeof value === 'number') {
                               return `${value.toFixed(1)}%`;
                             }
@@ -190,8 +190,8 @@ export default function DashboardPage() {
                         tickLine={false}
                       />
                       <Tooltip 
-                        formatter={(value) => [value, 'Tasks']}
-                        labelFormatter={(label) => `Day ${label}`}
+                        formatter={(value: any) => [value, 'Tasks']}
+                        labelFormatter={(label: any) => `Day ${label}`}
                       />
                       <Bar 
                         dataKey="count" 

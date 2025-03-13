@@ -16,6 +16,20 @@ export default function CalendarPage() {
   const { data: tasks = [] } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
   });
+  
+  // Format time display (copied from task-timer.tsx for consistency)
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${remainingSeconds}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${remainingSeconds}s`;
+    }
+    return `${remainingSeconds}s`;
+  };
 
   // Get tasks for selected date based on due date (or creation date if no due date)
   const tasksForSelectedDate = tasks.filter(task => {
@@ -157,7 +171,7 @@ export default function CalendarPage() {
 
                       {task.timeSpent && task.timeSpent > 0 && (
                         <div className="text-sm text-muted-foreground">
-                          Time spent: {task.timeSpent} minutes
+                          Time spent: {formatTime(task.timeSpent)}
                         </div>
                       )}
                     </div>
