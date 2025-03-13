@@ -9,10 +9,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, ExternalLink, BookOpen, Newspaper } from "lucide-react";
+import { RefreshCw, ExternalLink, BookOpen } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { NewsFeed } from "@/components/news-feed";
-import { Separator } from "@/components/ui/separator";
 
 interface WikipediaArticle {
   title: string;
@@ -29,21 +27,19 @@ export default function WikipediaInfo() {
   const [article, setArticle] = useState<WikipediaArticle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<string>("wikipedia");
 
   const fetchRandomArticle = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Using Wikipedia's API to fetch a random article
       const response = await fetch(
         "https://en.wikipedia.org/api/rest_v1/page/random/summary"
       );
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch article: ${response.status}`);
       }
-      
+
       const data = await response.json();
       setArticle({
         title: data.title,
@@ -51,7 +47,7 @@ export default function WikipediaInfo() {
         fullurl: data.content_urls?.desktop?.page || "",
         thumbnail: data.thumbnail
       });
-      
+
     } catch (err: any) {
       setError(err.message || "Failed to fetch article");
       console.error("Error fetching Wikipedia article:", err);
@@ -71,29 +67,25 @@ export default function WikipediaInfo() {
   return (
     <div className="container mx-auto px-4 py-6">
       <Tabs 
-        value={activeTab} 
-        onValueChange={setActiveTab} 
+        value={"wikipedia"} //default value set to wikipedia
+        onValueChange={()=>{}} //No-op, as only one tab remains
         className="w-full mb-6"
       >
         <div className="flex items-center justify-center mb-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-md grid-cols-1"> {/* Changed to grid-cols-1 */}
             <TabsTrigger value="wikipedia" className="flex items-center">
               <BookOpen className="mr-2 h-4 w-4" /> 
               Wikipedia
             </TabsTrigger>
-            <TabsTrigger value="news" className="flex items-center">
-              <Newspaper className="mr-2 h-4 w-4" /> 
-              News
-            </TabsTrigger>
           </TabsList>
         </div>
-        
+
         <TabsContent value="wikipedia">
           <h1 className="text-3xl font-bold mb-6 text-center flex items-center justify-center">
             <BookOpen className="mr-2 h-6 w-6" />
             Wikipedia Explorer
           </h1>
-          
+
           <Card className="mx-auto max-w-3xl shadow-lg">
             <CardHeader>
               {loading ? (
@@ -109,7 +101,7 @@ export default function WikipediaInfo() {
                 )}
               </CardDescription>
             </CardHeader>
-            
+
             <CardContent>
               {error && (
                 <div className="bg-red-50 p-4 rounded-md text-red-700 mb-4">
@@ -119,7 +111,7 @@ export default function WikipediaInfo() {
                   </p>
                 </div>
               )}
-              
+
               {loading ? (
                 <div className="space-y-4">
                   <Skeleton className="h-4 w-full" />
@@ -138,13 +130,13 @@ export default function WikipediaInfo() {
                         <TabsTrigger value="image">Image</TabsTrigger>
                       )}
                     </TabsList>
-                    
+
                     <TabsContent value="content" className="mt-0">
                       <p className="text-base leading-relaxed">
                         {article?.extract}
                       </p>
                     </TabsContent>
-                    
+
                     {article?.thumbnail && (
                       <TabsContent value="image" className="mt-0">
                         <div className="flex justify-center">
@@ -160,7 +152,7 @@ export default function WikipediaInfo() {
                 </>
               )}
             </CardContent>
-            
+
             <CardFooter className="flex justify-between">
               <Button 
                 variant="outline" 
@@ -170,7 +162,7 @@ export default function WikipediaInfo() {
                 <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                 Show Another
               </Button>
-              
+
               {article?.fullurl && (
                 <Button 
                   variant="default" 
@@ -183,18 +175,10 @@ export default function WikipediaInfo() {
               )}
             </CardFooter>
           </Card>
-          
+
           <div className="mt-6 text-center text-sm text-muted-foreground">
             Content fetched from Wikipedia. Refresh or click "Show Another" to explore new topics.
           </div>
-        </TabsContent>
-        
-        <TabsContent value="news">
-          <h1 className="text-3xl font-bold mb-6 text-center flex items-center justify-center">
-            <Newspaper className="mr-2 h-6 w-6" />
-            Live News Feed
-          </h1>
-          <NewsFeed />
         </TabsContent>
       </Tabs>
     </div>

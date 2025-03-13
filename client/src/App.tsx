@@ -7,19 +7,17 @@ import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 import Sudoku from "@/pages/sudoku";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Home as HomeIcon, LayoutDashboard, HelpCircle, Plus, Gamepad2, BookOpen, Newspaper } from "lucide-react";
+import { CalendarDays, Home as HomeIcon, LayoutDashboard, HelpCircle, Plus, Gamepad2, BookOpen } from "lucide-react";
 import { InsertTask, Task } from "@shared/schema";
 import { addTask } from "@/lib/tasks";
 import Home from "@/pages/home";
 import Support from "@/pages/support";
 import Wikipedia from "@/pages/wikipedia";
-import News from "@/pages/news";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { TaskForm } from "@/components/task-form";
 import { useState } from "react";
 
 function Navigation() {
-
   return (
     <nav className="border-b">
       <div className="container mx-auto px-4">
@@ -51,15 +49,6 @@ function Navigation() {
               Wikipedia
             </Button>
           </Link>
-          <Link href="/news">
-            <Button 
-              variant="ghost"
-              className="text-green-600 hover:text-green-800"
-            >
-              <Newspaper className="mr-2 h-4 w-4" />
-              News
-            </Button>
-          </Link>
           <Link href="/sudoku">
             <Button 
               variant="ghost"
@@ -88,7 +77,6 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/wikipedia" component={Wikipedia} />
-      <Route path="/news" component={News} />
       <Route path="/sudoku" component={Sudoku} />
       <Route path="/support" component={Support} />
       <Route component={NotFound} />
