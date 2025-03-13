@@ -368,14 +368,69 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
             name="recurrenceInterval"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Custom Interval (e.g., "3 days", "2 weeks")</FormLabel>
+                <FormLabel>Custom Interval (days)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter interval..." {...field} />
+                  <Input type="number" placeholder="Enter number of days..." {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+        )}
+        
+        {form.watch("recurrence") !== "none" && (
+          <div className="border rounded-md p-3 bg-purple-50 dark:bg-purple-950">
+            <div className="flex items-center gap-2 mb-2">
+              <RefreshCw className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              <h4 className="font-medium text-sm">
+                {form.watch("recurrence") === "daily" && "Repeats daily"}
+                {form.watch("recurrence") === "weekly" && "Repeats weekly"}
+                {form.watch("recurrence") === "monthly" && "Repeats monthly"}
+                {form.watch("recurrence") === "custom" && `Repeats every ${form.watch("recurrenceInterval") || 1} day(s)`}
+              </h4>
+            </div>
+            
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Next occurrences based on due date:</p>
+              <div className="grid grid-cols-1 gap-1">
+                {[...Array(3)].map((_, i) => {
+                  const dueDate = form.watch("dueDate");
+                  if (!dueDate) return null;
+                  
+                  let nextDate: Date;
+                  const recurrence = form.watch("recurrence");
+                  const interval = form.watch("recurrenceInterval") ? 
+                    parseInt(form.watch("recurrenceInterval"), 10) : 1;
+                  
+                  switch (recurrence) {
+                    case "daily":
+                      nextDate = addDays(dueDate, i + 1);
+                      break;
+                    case "weekly":
+                      nextDate = addDays(dueDate, (i + 1) * 7);
+                      break;
+                    case "monthly":
+                      const newDate = new Date(dueDate);
+                      newDate.setMonth(dueDate.getMonth() + i + 1);
+                      nextDate = newDate;
+                      break;
+                    case "custom":
+                      nextDate = addDays(dueDate, (i + 1) * interval);
+                      break;
+                    default:
+                      nextDate = dueDate;
+                  }
+                  
+                  return (
+                    <div key={i} className="flex items-center gap-1 text-xs">
+                      <CalendarDays className="h-3 w-3 text-muted-foreground" />
+                      <span>{format(nextDate, "EEE, MMM d, yyyy")}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         )}
 
         <FormField
