@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InsertTask, insertTaskSchema, recurrenceOptions, categoryOptions } from "@shared/schema";
 import { addDays, format, isSameDay } from "date-fns";
-import { CalendarDays, RefreshCw, CalendarIcon, Paperclip, FileText, X } from "lucide-react";
+import { CalendarDays, RefreshCw, CalendarIcon, Paperclip, FileText, X, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ interface TaskFormProps {
 export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) => {
   const [showCustomInterval, setShowCustomInterval] = useState(false);
   const [tagInput, setTagInput] = useState("");
+  const [linkInput, setLinkInput] = useState("");
   const { toast } = useToast();
 
   const form = useForm<InsertTask>({
@@ -40,11 +41,13 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
       xpEarned: 0,
       dueDate: new Date(),
       tags: [],
+      links: [],
       ...defaultValues,
     },
   });
 
   const tags = form.watch("tags") || [];
+  const links = form.watch("links") || [];
 
   const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
@@ -57,10 +60,43 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
     }
   };
 
+  const handleLinkKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && linkInput.trim()) {
+      e.preventDefault();
+      let url = linkInput.trim();
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
+
+      try {
+        new URL(url); // Validate URL format
+        const newLink = {
+          url,
+          title: new URL(url).hostname
+        };
+        form.setValue("links", [...links, newLink]);
+        setLinkInput("");
+      } catch (err) {
+        toast({
+          title: "Invalid URL",
+          description: "Please enter a valid URL",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const removeTag = (tagToRemove: string) => {
     form.setValue(
       "tags",
       tags.filter((tag) => tag !== tagToRemove)
+    );
+  };
+
+  const removeLink = (linkToRemove: string) => {
+    form.setValue(
+      "links",
+      links.filter((link) => link.url !== linkToRemove)
     );
   };
 
@@ -300,6 +336,54 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
 
         <FormField
           control={form.control}
+          name="links"
+          render={() => (
+            <FormItem>
+              <FormLabel>Link</FormLabel>
+              <FormControl>
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <span className="bg-muted px-3 py-2 text-sm border rounded-l-md border-r-0">
+                      https://
+                    </span>
+                    <Input
+                      className="rounded-l-none"
+                      placeholder="example.com"
+                      value={linkInput}
+                      onChange={(e) => setLinkInput(e.target.value)}
+                      onKeyDown={handleLinkKeyDown}
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {links.map((link, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                      >
+                        <LinkIcon className="h-3 w-3" />
+                        {link.title}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-4 w-4 p-0 hover:bg-transparent"
+                          onClick={() => removeLink(link.url)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="dueDate"
           render={({ field }) => (
             <FormItem className="flex flex-col">
@@ -377,7 +461,7 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
             )}
           />
         )}
-        
+
         {form.watch("recurrence") !== "none" && (
           <div className="border rounded-md p-3 bg-purple-50 dark:bg-purple-950">
             <div className="flex items-center gap-2 mb-2">
@@ -389,20 +473,20 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
                 {form.watch("recurrence") === "custom" && `Repeats every ${form.watch("recurrenceInterval") ? form.watch("recurrenceInterval") : "1"} day(s)`}
               </h4>
             </div>
-            
+
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Next occurrences based on due date:</p>
               <div className="grid grid-cols-1 gap-1">
                 {[...Array(3)].map((_, i) => {
                   const dueDate = form.watch("dueDate");
                   if (!dueDate) return null;
-                  
+
                   let nextDate: Date;
                   const recurrence = form.watch("recurrence");
                   const recurrenceInterval = form.watch("recurrenceInterval");
-                  const interval = recurrenceInterval && typeof recurrenceInterval === 'string' ? 
+                  const interval = recurrenceInterval && typeof recurrenceInterval === 'string' ?
                     parseInt(recurrenceInterval, 10) : 1;
-                  
+
                   switch (recurrence) {
                     case "daily":
                       nextDate = addDays(dueDate, i + 1);
@@ -421,7 +505,7 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
                     default:
                       nextDate = dueDate;
                   }
-                  
+
                   return (
                     <div key={i} className="flex items-center gap-1 text-xs">
                       <CalendarDays className="h-3 w-3 text-muted-foreground" />
