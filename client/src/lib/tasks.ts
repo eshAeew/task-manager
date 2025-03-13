@@ -10,11 +10,10 @@ interface DeletedTask extends Task {
 }
 
 export function getTasks(userUuid: string): Task[] {
-  const stored = localStorage.getItem("tasks");
+  const stored = localStorage.getItem(STORAGE_KEY);
   if (!stored) return [];
   try {
     const tasks = JSON.parse(stored);
-    // Filter tasks based on UUID (own tasks + shared tasks)
     return tasks.filter((task: Task) =>
       task.userUuid === userUuid || (task.isShared && task.userUuid !== userUuid)
     ).map((task: any) => ({
@@ -122,9 +121,14 @@ export function addTask(task: InsertTask): Task {
     tags: task.tags || [],
     attachmentUrl: task.attachmentUrl || null,
     attachmentName: task.attachmentName || null,
+    recurrenceInterval: task.recurrenceInterval || null,
+    status: task.status || "todo",
+    isShared: false,
+    userUuid: task.userUuid,
   };
-  tasks.push(newTask);
-  saveTasks(tasks);
+
+  const updatedTasks = [...tasks, newTask];
+  saveTasks(updatedTasks);
   return newTask;
 }
 
@@ -166,7 +170,7 @@ export function restoreTask(id: number) {
 
   // Add back to active tasks
   const { deletedAt, ...restoredTask } = taskToRestore;
-  const tasks = getTasks(restoredTask.userUuid); // Added userUuid for consistency
+  const tasks = getTasks(restoredTask.userUuid); 
   tasks.push(restoredTask);
   saveTasks(tasks);
 
