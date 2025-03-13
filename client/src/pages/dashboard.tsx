@@ -125,38 +125,7 @@ export default function DashboardPage() {
         </TabsContent>
 
         <TabsContent value="detailed">
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Time Spent by Category */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Time Spent by Category</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={timeData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        paddingAngle={5}
-                        dataKey="value"
-                        label={({ name, label }) => `${name}: ${label}`}
-                      >
-                        {timeData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-
+          <div className="grid gap-4">
             {/* Completion Rate by Priority */}
             <Card>
               <CardHeader>
@@ -177,7 +146,7 @@ export default function DashboardPage() {
             </Card>
 
             {/* Task Creation Distribution */}
-            <Card className="col-span-full">
+            <Card>
               <CardHeader>
                 <CardTitle>Task Creation Distribution (This Month)</CardTitle>
               </CardHeader>
