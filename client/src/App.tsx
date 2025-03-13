@@ -7,12 +7,13 @@ import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 import Sudoku from "@/pages/sudoku";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Home as HomeIcon, LayoutDashboard, HelpCircle, Plus, Gamepad2, BookOpen } from "lucide-react";
+import { CalendarDays, Home as HomeIcon, LayoutDashboard, HelpCircle, Plus, Gamepad2, BookOpen, Sparkles } from "lucide-react";
 import { InsertTask, Task } from "@shared/schema";
 import { addTask } from "@/lib/tasks";
 import Home from "@/pages/home";
 import Support from "@/pages/support";
 import Wikipedia from "@/pages/wikipedia";
+import Fidget from "@/pages/fidget";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { TaskForm } from "@/components/task-form";
 import { useState } from "react";
@@ -50,6 +51,15 @@ function Navigation() {
               Wikipedia
             </Button>
           </Link>
+          <Link href="/fidget">
+            <Button 
+              variant="ghost"
+              className="text-amber-500 hover:text-amber-600"
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              Fidget Toys
+            </Button>
+          </Link>
           <Link href="/sudoku">
             <Button 
               variant="ghost"
@@ -78,6 +88,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/wikipedia" component={Wikipedia} />
+      <Route path="/fidget" component={Fidget} />
       <Route path="/sudoku" component={Sudoku} />
       <Route path="/support" component={Support} />
       <Route component={NotFound} />
