@@ -23,7 +23,6 @@ import {
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [view, setView] = useState<"day" | "week" | "timeline">("day");
-  const [isAddingTask, setIsAddingTask] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const queryClient = useQueryClient();
@@ -165,8 +164,8 @@ export default function CalendarPage() {
               <Badge variant="outline">{taskStats.total} Total</Badge>
               <Badge variant="secondary">{taskStats.completed} Done</Badge>
               <Badge variant="destructive">{taskStats.high} High</Badge>
-              <Badge variant="warning">{taskStats.medium} Medium</Badge>
-              <Badge variant="default">{taskStats.low} Low</Badge>
+              <Badge>{taskStats.medium} Medium</Badge>
+              <Badge variant="secondary">{taskStats.low} Low</Badge>
             </div>
           </div>
         </Card>
@@ -417,25 +416,6 @@ export default function CalendarPage() {
           </Card>
         </div>
       </div>
-
-      <Dialog open={isAddingTask} onOpenChange={setIsAddingTask}>
-        <DialogContent className="max-w-lg">
-          <DialogTitle>Add New Task</DialogTitle>
-          <TaskForm
-            onSubmit={(task) => {
-              setIsAddingTask(false);
-              toast({
-                title: "Task created",
-                description: "New task has been added successfully.",
-              });
-            }}
-            onCancel={() => setIsAddingTask(false)}
-            defaultValues={{
-              dueDate: selectedDate,
-            }}
-          />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
