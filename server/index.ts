@@ -65,7 +65,8 @@ app.use((req, res, next) => {
   server.listen({
     port,
     host: isReplit ? "0.0.0.0" : "127.0.0.1",
-    reusePort: isReplit ? true : false,
+    reusePort: true,
+    reuseAddress: true,
   }, () => {
     log(`serving on port ${port}`);
   });
