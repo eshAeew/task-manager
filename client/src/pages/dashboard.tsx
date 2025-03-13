@@ -42,15 +42,21 @@ export default function DashboardPage() {
 
   // Calculate time spent distribution by category
   const timeByCategory = tasks.reduce((acc, task) => {
+    if (!task.timeSpent) return acc;
     const category = task.category;
-    acc[category] = (acc[category] || 0) + (task.timeSpent || 0);
+    // Convert timeSpent from seconds to hours for better readability
+    const hours = Math.round((task.timeSpent / 3600) * 10) / 10; // Round to 1 decimal place
+    acc[category] = (acc[category] || 0) + hours;
     return acc;
   }, {} as Record<string, number>);
 
-  const timeData = Object.entries(timeByCategory).map(([name, value]) => ({
-    name,
-    value: Math.round(value / 60), // Convert seconds to minutes
-  }));
+  const timeData = Object.entries(timeByCategory)
+    .filter(([_, value]) => value > 0) // Only show categories with time spent
+    .map(([name, value]) => ({
+      name,
+      value,
+      label: `${value} hrs`
+    }));
 
   // Calculate completion rate by priority
   const completionByPriority = tasks.reduce((acc, task) => {
@@ -71,6 +77,14 @@ export default function DashboardPage() {
   }));
 
   const COLORS = ["#3B82F6", "#EAB308", "#EF4444", "#10B981", "#8B5CF6"];
+
+  // Get tasks due on selected date for calendar
+  const getDueTasks = (date: Date) => {
+    return tasks.filter(task => {
+      if (!task.dueDate) return false;
+      return isSameDay(new Date(task.dueDate), date);
+    });
+  };
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -107,7 +121,7 @@ export default function DashboardPage() {
                         fill="#8884d8"
                         paddingAngle={5}
                         dataKey="value"
-                        label={({ name, value }) => `${name}: ${value}min`}
+                        label={({ name, label }) => `${name}: ${label}`}
                       >
                         {timeData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -171,14 +185,17 @@ export default function DashboardPage() {
                 selected={new Date()}
                 className="rounded-md border"
                 modifiers={{
-                  busy: (date) => tasks.some(task => 
-                    isSameDay(new Date(task.dueDate), date)
-                  ),
+                  highlight: (date) => getDueTasks(date).length > 0
                 }}
                 modifiersStyles={{
-                  busy: { backgroundColor: "#3B82F6", color: "white" },
+                  highlight: { backgroundColor: "#3B82F6", color: "white" }
                 }}
               />
+              <div className="mt-4">
+                <p className="text-sm text-muted-foreground">
+                  Days with tasks due are highlighted in blue
+                </p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
