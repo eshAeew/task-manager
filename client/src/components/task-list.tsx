@@ -13,7 +13,10 @@ import { getTasks, importTasks } from "@/lib/tasks";
 import { KanbanBoard } from "./kanban-board";
 import { TaskSearch } from "./task-search";
 import { RecurrenceVisualization } from "./recurrence-visualization";
+import { PriorityIndicator } from "./priority-indicator";
+import { TaskProgress } from "./task-progress";
 import { categoryIcons } from "@shared/schema";
+import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
 
 interface TaskListProps {
   tasks: Task[];
@@ -45,6 +48,8 @@ export function TaskList({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<"dueDate" | "priority" | "createdAt" | "title">("dueDate");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -71,14 +76,47 @@ export function TaskList({
     return () => clearInterval(interval);
   }, [tasks]);
 
-  const filteredTasks = tasks.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPriority = filter === "all" || task.priority === filter;
-    const matchesCategory = selectedCategory === "all" || task.category === selectedCategory;
-    const matchesTags = selectedTags.length === 0 ||
-      (Array.isArray(task.tags) && selectedTags.every(tag => task.tags!.includes(tag)));
-    return matchesSearch && matchesPriority && matchesCategory && matchesTags;
-  });
+  // Helper function to get sortable value
+  const getSortableValue = (task: Task, field: typeof sortBy) => {
+    switch (field) {
+      case "dueDate":
+        return task.dueDate ? new Date(task.dueDate).getTime() : Infinity;
+      case "priority": {
+        const priorityMap = { high: 1, medium: 2, low: 3 };
+        return priorityMap[task.priority as keyof typeof priorityMap] || 4;
+      }
+      case "createdAt":
+        return task.createdAt ? new Date(task.createdAt).getTime() : 0;
+      case "title":
+        return task.title.toLowerCase();
+      default:
+        return 0;
+    }
+  };
+
+  const filteredTasks = tasks
+    .filter(task => {
+      const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesPriority = filter === "all" || task.priority === filter;
+      const matchesCategory = selectedCategory === "all" || task.category === selectedCategory;
+      const matchesTags = selectedTags.length === 0 ||
+        (Array.isArray(task.tags) && selectedTags.every(tag => task.tags!.includes(tag)));
+      return matchesSearch && matchesPriority && matchesCategory && matchesTags;
+    })
+    .sort((a, b) => {
+      const valueA = getSortableValue(a, sortBy);
+      const valueB = getSortableValue(b, sortBy);
+      
+      if (typeof valueA === 'string' && typeof valueB === 'string') {
+        return sortDirection === 'asc' 
+          ? valueA.localeCompare(valueB) 
+          : valueB.localeCompare(valueA);
+      }
+      
+      return sortDirection === 'asc' 
+        ? (valueA as number) - (valueB as number) 
+        : (valueB as number) - (valueA as number);
+    });
 
   const priorityBadgeColor = (priority: string) => {
     switch (priority) {
@@ -266,13 +304,96 @@ export function TaskList({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <TaskSearch
-          onSearch={setSearchTerm}
-          onCategoryChange={setSelectedCategory}
-          onTagAdd={(tag) => setSelectedTags(prev => [...prev, tag])}
-          onTagRemove={(tag) => setSelectedTags(prev => prev.filter(t => t !== tag))}
-          tags={selectedTags}
-        />
+        <div className="space-y-4">
+          <TaskSearch
+            onSearch={setSearchTerm}
+            onCategoryChange={setSelectedCategory}
+            onTagAdd={(tag) => setSelectedTags(prev => [...prev, tag])}
+            onTagRemove={(tag) => setSelectedTags(prev => prev.filter(t => t !== tag))}
+            tags={selectedTags}
+          />
+          
+          <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md bg-muted/30">
+            <span className="text-sm font-medium">Sort by:</span>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={sortBy === "dueDate" ? "secondary" : "outline"}
+                size="sm"
+                className="h-8"
+                onClick={() => {
+                  if (sortBy === "dueDate") {
+                    setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                  } else {
+                    setSortBy("dueDate");
+                    setSortDirection("asc");
+                  }
+                }}
+              >
+                Due Date
+                {sortBy === "dueDate" && (
+                  sortDirection === "asc" ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
+                )}
+              </Button>
+              
+              <Button
+                variant={sortBy === "priority" ? "secondary" : "outline"}
+                size="sm"
+                className="h-8"
+                onClick={() => {
+                  if (sortBy === "priority") {
+                    setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                  } else {
+                    setSortBy("priority");
+                    setSortDirection("asc");
+                  }
+                }}
+              >
+                Priority
+                {sortBy === "priority" && (
+                  sortDirection === "asc" ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
+                )}
+              </Button>
+              
+              <Button
+                variant={sortBy === "title" ? "secondary" : "outline"}
+                size="sm"
+                className="h-8"
+                onClick={() => {
+                  if (sortBy === "title") {
+                    setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                  } else {
+                    setSortBy("title");
+                    setSortDirection("asc");
+                  }
+                }}
+              >
+                Title
+                {sortBy === "title" && (
+                  sortDirection === "asc" ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
+                )}
+              </Button>
+              
+              <Button
+                variant={sortBy === "createdAt" ? "secondary" : "outline"}
+                size="sm"
+                className="h-8"
+                onClick={() => {
+                  if (sortBy === "createdAt") {
+                    setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                  } else {
+                    setSortBy("createdAt");
+                    setSortDirection("asc");
+                  }
+                }}
+              >
+                Created
+                {sortBy === "createdAt" && (
+                  sortDirection === "asc" ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
         {filteredTasks.map(task => (
           <div key={task.id} className="flex flex-col p-4 rounded-lg border">
             <div className="flex items-start justify-between">
@@ -286,9 +407,12 @@ export function TaskList({
                     {task.title}
                   </p>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    <span className={`text-xs px-2 py-1 rounded-full ${priorityBadgeColor(task.priority)}`}>
-                      {task.priority}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2 py-1 rounded-full ${priorityBadgeColor(task.priority)}`}>
+                        {task.priority}
+                      </span>
+                      <PriorityIndicator priority={task.priority} />
+                    </div>
                     <span className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground">
                       {categoryIcons[task.category]} {task.category}
                     </span>
