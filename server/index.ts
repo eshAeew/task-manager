@@ -64,7 +64,7 @@ app.use((req, res, next) => {
   
   server.listen({
     port,
-    host: isReplit ? "0.0.0.0" : "127.0.0.1",
+    host: "0.0.0.0", // Always use 0.0.0.0 on Replit
     reusePort: true,
     reuseAddress: true,
   }, () => {
