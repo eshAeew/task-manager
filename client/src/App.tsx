@@ -6,6 +6,7 @@ import Calendar from "@/pages/calendar";
 import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 import Sudoku from "@/pages/sudoku";
+import Chess from "@/pages/chess";
 import Notes from "@/pages/notes";
 import { Button } from "@/components/ui/button";
 import { 
@@ -16,7 +17,8 @@ import {
   Plus, 
   Gamepad2, 
   BookOpen,
-  StickyNote
+  StickyNote,
+  Crown
 } from "lucide-react";
 import { InsertTask, Task } from "@shared/schema";
 import { addTask } from "@/lib/tasks";
@@ -77,6 +79,15 @@ function Navigation() {
               Sudoku
             </Button>
           </Link>
+          <Link href="/chess">
+            <Button 
+              variant="ghost"
+              className="text-amber-600 hover:text-amber-800"
+            >
+              <Crown className="mr-2 h-4 w-4" />
+              Chess
+            </Button>
+          </Link>
           <Link href="/support">
             <Button variant="ghost">
               <HelpCircle className="mr-2 h-4 w-4" />
@@ -98,6 +109,7 @@ function Router() {
       <Route path="/wikipedia" component={Wikipedia} />
       <Route path="/notes" component={Notes} />
       <Route path="/sudoku" component={Sudoku} />
+      <Route path="/chess" component={Chess} />
       <Route path="/support" component={Support} />
       <Route component={NotFound} />
     </Switch>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -24,17 +24,42 @@ import {
   LayoutList,
   BookOpen,
   Link as LinkIcon,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Star,
+  Archive,
+  Share2,
+  Folder,
+  Copy,
+  AlarmClock,
+  Check,
+  FileText
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
+import ReactQuill from 'react-quill';
 
 interface Note {
   id: string;
@@ -47,6 +72,12 @@ interface Note {
   pinned: boolean;
   links: { title: string; url: string; }[];
   image?: string;
+  favorite?: boolean;
+  archived?: boolean;
+  category?: string;
+  markdown?: boolean;
+  reminder?: string;
+  shared?: boolean;
 }
 
 // Using semantic color classes that work with both light and dark themes
@@ -69,8 +100,30 @@ const TAG_COLORS = [
   'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200',
 ];
 
+// Define category options for organizing notes
+const CATEGORIES = [
+  { name: 'Personal', value: 'personal', icon: <BookOpen className="h-4 w-4" /> },
+  { name: 'Work', value: 'work', icon: <Folder className="h-4 w-4" /> },
+  { name: 'Ideas', value: 'ideas', icon: <ImageIcon className="h-4 w-4" /> },
+  { name: 'Tasks', value: 'tasks', icon: <Check className="h-4 w-4" /> },
+];
+
+// Rich text editor module configuration
+const EDITOR_MODULES = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    [{ color: [] }, { background: [] }],
+    ['link', 'image'],
+    ['clean'],
+  ],
+};
+
 export default function Notes() {
+  const { toast } = useToast();
   const [notes, setNotes] = useLocalStorage<Note[]>("notes", []);
+  const [archivedNotes, setArchivedNotes] = useLocalStorage<Note[]>("archived-notes", []);
   const [search, setSearch] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [editingNote, setEditingNote] = useState<string | null>(null);
@@ -80,9 +133,14 @@ export default function Notes() {
   const [editedLinks, setEditedLinks] = useState<{ title: string; url: string; }[]>([]);
   const [newTag, setNewTag] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isGridView, setIsGridView] = useState(true);
   const [newLinkTitle, setNewLinkTitle] = useState("");
   const [newLinkUrl, setNewLinkUrl] = useState("");
+  const [viewMode, setViewMode] = useState<'all' | 'favorites' | 'archived'>('all');
+  const [useMarkdownEditor, setUseMarkdownEditor] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [newNote, setNewNote] = useState({
     title: "",
@@ -92,6 +150,12 @@ export default function Notes() {
     pinned: false,
     links: [] as { title: string; url: string; }[],
     image: "",
+    favorite: false,
+    archived: false,
+    category: "",
+    markdown: false,
+    reminder: "",
+    shared: false,
   });
 
   // Get all unique tags from all notes
@@ -109,6 +173,12 @@ export default function Notes() {
       pinned: newNote.pinned,
       links: newNote.links,
       image: newNote.image,
+      favorite: newNote.favorite,
+      archived: newNote.archived,
+      category: newNote.category,
+      markdown: newNote.markdown,
+      reminder: newNote.reminder,
+      shared: newNote.shared,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -122,6 +192,12 @@ export default function Notes() {
       pinned: false,
       links: [],
       image: "",
+      favorite: false,
+      archived: false,
+      category: "",
+      markdown: false,
+      reminder: "",
+      shared: false,
     });
     setIsAdding(false);
   };
@@ -203,14 +279,21 @@ export default function Notes() {
 
   const addTagToNote = (tag: string, isNewNote: boolean = false) => {
     if (!tag.trim()) return;
-
+    const trimmedTag = tag.trim();
+    
     if (isNewNote) {
-      setNewNote(prev => ({
-        ...prev,
-        tags: [...new Set([...prev.tags, tag.trim()])]
-      }));
+      setNewNote(prev => {
+        if (prev.tags.includes(trimmedTag)) return prev;
+        return {
+          ...prev,
+          tags: [...prev.tags, trimmedTag]
+        };
+      });
     } else {
-      setEditedTags(prev => [...new Set([...prev, tag.trim()])]);
+      setEditedTags(prev => {
+        if (prev.includes(trimmedTag)) return prev;
+        return [...prev, trimmedTag];
+      });
     }
     setNewTag("");
   };
@@ -230,14 +313,188 @@ export default function Notes() {
     const index = Math.abs(tag.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0));
     return TAG_COLORS[index % TAG_COLORS.length];
   };
+  
+  // New feature functions
+  const toggleFavorite = (id: string) => {
+    setNotes(
+      notes.map((note) =>
+        note.id === id
+          ? { ...note, favorite: !note.favorite, updatedAt: new Date().toISOString() }
+          : note
+      )
+    );
+    toast({
+      title: "Note updated",
+      description: `Note ${notes.find(n => n.id === id)?.favorite ? 'removed from' : 'added to'} favorites.`,
+    });
+  };
 
-  // Sort notes with pinned first, then by date
-  const sortedAndFilteredNotes = notes
+  const archiveNote = (id: string) => {
+    const noteToArchive = notes.find(note => note.id === id);
+    if (!noteToArchive) return;
+    
+    const archivedNote = { ...noteToArchive, archived: true };
+    setArchivedNotes([archivedNote, ...archivedNotes]);
+    setNotes(notes.filter(note => note.id !== id));
+    
+    toast({
+      title: "Note archived",
+      description: "Note has been moved to archive.",
+    });
+  };
+
+  const restoreNote = (id: string) => {
+    const noteToRestore = archivedNotes.find(note => note.id === id);
+    if (!noteToRestore) return;
+    
+    const restoredNote = { ...noteToRestore, archived: false };
+    setNotes([restoredNote, ...notes]);
+    setArchivedNotes(archivedNotes.filter(note => note.id !== id));
+    
+    toast({
+      title: "Note restored",
+      description: "Note has been moved from archive.",
+    });
+  };
+  
+  const deleteArchivedNote = (id: string) => {
+    setArchivedNotes(archivedNotes.filter((note) => note.id !== id));
+    toast({
+      title: "Note deleted",
+      description: "Note has been permanently deleted from archive.",
+    });
+  };
+
+  const shareNote = (id: string) => {
+    const note = notes.find(note => note.id === id);
+    if (!note) return;
+    
+    // In a real app, this would generate a shareable link or show sharing options
+    const shareableUrl = `${window.location.origin}/shared-note/${id}`;
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(shareableUrl).then(() => {
+      toast({
+        title: "Link copied to clipboard",
+        description: "You can now share this note with others.",
+      });
+      
+      // Mark note as shared
+      setNotes(
+        notes.map((note) =>
+          note.id === id
+            ? { ...note, shared: true }
+            : note
+        )
+      );
+    }).catch(() => {
+      toast({
+        title: "Failed to copy link",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    });
+  };
+
+  const updateCategory = (id: string, category: string) => {
+    setNotes(
+      notes.map((note) =>
+        note.id === id
+          ? { ...note, category, updatedAt: new Date().toISOString() }
+          : note
+      )
+    );
+  };
+
+  const toggleMarkdown = (id: string) => {
+    setNotes(
+      notes.map((note) =>
+        note.id === id
+          ? { ...note, markdown: !note.markdown, updatedAt: new Date().toISOString() }
+          : note
+      )
+    );
+  };
+
+  const handleImageUpload = (isNewNote: boolean = false) => {
+    if (!fileInputRef.current) return;
+    fileInputRef.current.click();
+
+    fileInputRef.current.onchange = (event) => {
+      const files = (event.target as HTMLInputElement).files;
+      if (!files || files.length === 0) return;
+
+      const file = files[0];
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload an image file.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsUploading(true);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageData = e.target?.result as string;
+        
+        if (isNewNote) {
+          setNewNote({ ...newNote, image: imageData });
+        } else if (editingNote) {
+          setNotes(
+            notes.map((note) =>
+              note.id === editingNote
+                ? { ...note, image: imageData, updatedAt: new Date().toISOString() }
+                : note
+            )
+          );
+        }
+        
+        setIsUploading(false);
+        toast({
+          title: "Image uploaded",
+          description: "Image has been added to your note.",
+        });
+      };
+      
+      reader.onerror = () => {
+        setIsUploading(false);
+        toast({
+          title: "Upload failed",
+          description: "Failed to upload image. Please try again.",
+          variant: "destructive",
+        });
+      };
+      
+      reader.readAsDataURL(file);
+    };
+  };
+
+  // Get notes for current view mode
+  const getNotesForView = () => {
+    switch (viewMode) {
+      case 'favorites':
+        return notes.filter(note => note.favorite);
+      case 'archived':
+        return archivedNotes;
+      case 'all':
+      default:
+        return notes;
+    }
+  };
+
+  // Apply filters and sorting to the current view mode's notes
+  const sortedAndFilteredNotes = getNotesForView()
     .filter((note) => {
       const matchesSearch =
         note.title.toLowerCase().includes(search.toLowerCase()) ||
         note.content.toLowerCase().includes(search.toLowerCase()) ||
         note.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()));
+
+      if (selectedCategory && note.category !== selectedCategory) {
+        return false;
+      }
 
       return selectedTag ? note.tags.includes(selectedTag) && matchesSearch : matchesSearch;
     })
@@ -274,6 +531,30 @@ export default function Notes() {
         </div>
 
         <div className="w-full max-w-4xl space-y-4">
+          {/* View Mode Tabs */}
+          <div className="flex items-center justify-between">
+            <Tabs 
+              value={viewMode} 
+              onValueChange={(value) => setViewMode(value as 'all' | 'favorites' | 'archived')}
+              className="w-full"
+            >
+              <TabsList className="bg-background/50 dark:bg-background/20 backdrop-blur-sm border-2 grid w-full grid-cols-3">
+                <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  All Notes
+                </TabsTrigger>
+                <TabsTrigger value="favorites" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-white">
+                  <Star className="h-4 w-4 mr-2" />
+                  Favorites
+                </TabsTrigger>
+                <TabsTrigger value="archived" className="data-[state=active]:bg-slate-500 data-[state=active]:text-white">
+                  <Archive className="h-4 w-4 mr-2" />
+                  Archived
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -284,6 +565,36 @@ export default function Notes() {
             />
           </div>
 
+          {/* Category Filter */}
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="space-y-1 flex-1">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Folder className="h-4 w-4 text-muted-foreground" />
+                <span>Category</span>
+              </label>
+              <Select 
+                value={selectedCategory || 'all'} 
+                onValueChange={(value) => setSelectedCategory(value === 'all' ? null : value)}
+              >
+                <SelectTrigger className="w-full md:w-[180px] bg-background/50 dark:bg-background/20">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {CATEGORIES.map(category => (
+                    <SelectItem key={category.value} value={category.value}>
+                      <div className="flex items-center gap-2">
+                        {category.icon}
+                        <span>{category.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Tags Filter */}
           {allTags.length > 0 && (
             <div className="flex flex-wrap gap-2 items-center">
               <TagIcon className="h-4 w-4 text-muted-foreground" />
@@ -312,21 +623,25 @@ export default function Notes() {
         {isAdding && (
           <Card className={`${newNote.color} transition-all duration-300 transform hover:scale-102 shadow-lg hover:shadow-xl border-2`}>
             <CardHeader className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setNewNote(prev => ({ ...prev, pinned: !prev.pinned }))}
-                  className={`hover:bg-black/5 ${newNote.pinned ? 'text-yellow-600' : ''}`}
-                >
-                  <Pin className={`h-4 w-4 ${newNote.pinned ? 'fill-current' : ''}`} />
-                </Button>
-                <Input
-                  placeholder="Title"
-                  value={newNote.title}
-                  onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
-                  className="text-lg font-semibold bg-transparent border-none px-0 focus-visible:ring-0"
-                />
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setNewNote(prev => ({ ...prev, pinned: !prev.pinned }))}
+                    className={`hover:bg-black/5 ${newNote.pinned ? 'text-yellow-600' : ''}`}
+                  >
+                    <Pin className={`h-4 w-4 ${newNote.pinned ? 'fill-current' : ''}`} />
+                  </Button>
+                  <div className="flex-1 overflow-hidden">
+                    <Input
+                      placeholder="Title"
+                      value={newNote.title}
+                      onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+                      className="text-lg font-semibold bg-transparent border-none px-0 focus-visible:ring-0"
+                    />
+                  </div>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -474,8 +789,9 @@ export default function Notes() {
             }`}
           >
             <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-2 flex-1">
+              <div className="flex flex-col gap-2">
+                {/* Title section with pin button */}
+                <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -484,63 +800,155 @@ export default function Notes() {
                   >
                     <Pin className={`h-4 w-4 ${note.pinned ? 'fill-current' : ''}`} />
                   </Button>
-                  {editingNote === note.id ? (
-                    <Input
-                      value={editedTitle}
-                      onChange={(e) => setEditedTitle(e.target.value)}
-                      className="text-lg font-semibold bg-transparent border-none px-0 focus-visible:ring-0"
-                    />
-                  ) : (
-                    <h3 className="font-semibold text-lg">{note.title}</h3>
-                  )}
+                  <div className="flex-1 overflow-hidden">
+                    {editingNote === note.id ? (
+                      <Input
+                        value={editedTitle}
+                        onChange={(e) => setEditedTitle(e.target.value)}
+                        className="text-lg font-semibold bg-transparent border-none px-0 focus-visible:ring-0"
+                      />
+                    ) : (
+                      <h3 className="font-semibold text-lg truncate" title={note.title}>
+                        {note.title}
+                      </h3>
+                    )}
+                  </div>
                 </div>
-                <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-1">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="hover:bg-black/5">
-                        <Palette className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      {COLORS.map((color) => (
-                        <DropdownMenuItem
-                          key={color.value}
-                          onClick={() => updateNoteColor(note.id, color.value)}
-                          className="cursor-pointer"
+                
+                {/* Action buttons in a separate row */}
+                <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-1 flex-wrap">
+                  {/* Actions for regular notes */}
+                  {viewMode !== 'archived' ? (
+                    <>
+                      {/* Color Picker */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="hover:bg-black/5">
+                            <Palette className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          {COLORS.map((color) => (
+                            <DropdownMenuItem
+                              key={color.value}
+                              onClick={() => updateNoteColor(note.id, color.value)}
+                              className="cursor-pointer"
+                            >
+                              <div className={`w-4 h-4 rounded mr-2 ${color.value}`}></div>
+                              {color.name}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      
+                      {/* More Actions Menu */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="hover:bg-black/5">
+                            <BookOpen className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onClick={() => toggleFavorite(note.id)} className="cursor-pointer">
+                            <Star className={`h-4 w-4 mr-2 ${note.favorite ? 'fill-yellow-500 text-yellow-500' : ''}`} />
+                            {note.favorite ? 'Remove from Favorites' : 'Add to Favorites'}
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuItem onClick={() => toggleMarkdown(note.id)} className="cursor-pointer">
+                            <AlarmClock className={`h-4 w-4 mr-2 ${note.markdown ? 'text-blue-500' : ''}`} />
+                            {note.markdown ? 'Disable Markdown' : 'Enable Markdown'} 
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuSeparator />
+                          
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger className="cursor-pointer">
+                              <Folder className="h-4 w-4 mr-2" />
+                              {note.category ? 
+                                CATEGORIES.find(c => c.value === note.category)?.name || 'Set Category' 
+                                : 'Set Category'}
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                              {CATEGORIES.map(category => (
+                                <DropdownMenuItem 
+                                  key={category.value}
+                                  onClick={() => updateCategory(note.id, category.value)}
+                                  className="cursor-pointer"
+                                >
+                                  <div className="flex items-center">
+                                    {category.icon}
+                                    <span className="ml-2">{category.name}</span>
+                                  </div>
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+                          
+                          <DropdownMenuSeparator />
+                          
+                          <DropdownMenuItem onClick={() => archiveNote(note.id)} className="cursor-pointer text-amber-600 dark:text-amber-400">
+                            <Archive className="h-4 w-4 mr-2" />
+                            Archive Note
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      
+                      {/* Edit/Save Button */}
+                      {editingNote === note.id ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => saveEdit(note.id)}
+                          className="hover:bg-emerald-100"
                         >
-                          <div className={`w-4 h-4 rounded mr-2 ${color.value}`}></div>
-                          {color.name}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  {editingNote === note.id ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => saveEdit(note.id)}
-                      className="hover:bg-emerald-100"
-                    >
-                      <Save className="h-4 w-4 text-emerald-600" />
-                    </Button>
+                          <Save className="h-4 w-4 text-emerald-600" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditing(note)}
+                          className="hover:bg-blue-100"
+                        >
+                          <Edit2 className="h-4 w-4 text-blue-600" />
+                        </Button>
+                      )}
+                      
+                      {/* Delete Button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteNote(note.id)}
+                        className="hover:bg-red-100"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </>
                   ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => startEditing(note)}
-                      className="hover:bg-blue-100"
-                    >
-                      <Edit2 className="h-4 w-4 text-blue-600" />
-                    </Button>
+                    <>
+                      {/* Restore Button for archived notes */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => restoreNote(note.id)}
+                        className="hover:bg-emerald-100"
+                      >
+                        <BookOpen className="h-4 w-4 text-emerald-600" />
+                        <span className="ml-2">Restore</span>
+                      </Button>
+                      
+                      {/* Delete Button for archived notes */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteArchivedNote(note.id)}
+                        className="hover:bg-red-100"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                        <span className="ml-2">Delete</span>
+                      </Button>
+                    </>
                   )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteNote(note.id)}
-                    className="hover:bg-red-100"
-                  >
-                    <Trash2 className="h-4 w-4 text-red-600" />
-                  </Button>
                 </div>
               </div>
             </CardHeader>

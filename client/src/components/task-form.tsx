@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InsertTask, insertTaskSchema, recurrenceOptions, categoryOptions } from "@shared/schema";
-import { addDays, format, isSameDay } from "date-fns";
+import { addDays, format } from "date-fns";
 import { CalendarDays, RefreshCw, CalendarIcon, Paperclip, FileText, X, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -66,18 +66,35 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
     if (e.key === "Enter" && linkInput.trim()) {
       e.preventDefault();
       let url = linkInput.trim();
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        url = 'https://' + url;
-      }
 
       try {
-        new URL(url); // Validate URL format
+        // Add protocol if missing
+        if (!/^https?:\/\//i.test(url)) {
+          url = 'https://' + url;
+        }
+
+        // Validate URL format
+        const urlObj = new URL(url);
+        if (!urlObj.hostname) {
+          throw new Error("Invalid hostname");
+        }
+
         const newLink = {
           url,
-          title: new URL(url).hostname
+          title: urlObj.hostname.replace(/^www\./i, '')
         };
-        form.setValue("links", [...links, newLink]);
-        setLinkInput("");
+
+        // Check for duplicate URLs
+        if (!links.some(link => link.url === url)) {
+          form.setValue("links", [...links, newLink]);
+          setLinkInput("");
+        } else {
+          toast({
+            title: "Duplicate link",
+            description: "This link has already been added",
+            variant: "destructive",
+          });
+        }
       } catch (err) {
         toast({
           title: "Invalid URL",
@@ -107,6 +124,9 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
     setShowCustomInterval(value === "custom");
     if (value !== "custom") {
       form.setValue("recurrenceInterval", undefined);
+    } else {
+      // Set default interval value for custom recurrence
+      form.setValue("recurrenceInterval", "1");
     }
   };
 
@@ -122,10 +142,22 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
     if (!file) return;
 
     // Check file size (limit to 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
       toast({
         title: "File too large",
         description: "Please select a file smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image, PDF, or Word document",
         variant: "destructive",
       });
       return;
@@ -259,19 +291,20 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
                   </div>
 
                   {attachmentUrl && (
-                    <div className="border rounded-lg p-3 space-y-2">
+                    <div className="border rounded-lg p-3 space-y-2" role="region" aria-label="Attachment preview">
                       {attachmentUrl.startsWith('data:image/') ? (
                         <div className="relative aspect-video">
                           <img
                             src={attachmentUrl}
-                            alt="Attachment preview"
+                            alt={attachmentName || "Task attachment preview"}
                             className="rounded object-contain w-full h-full"
+                            role="img"
                           />
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <FileText className="h-4 w-4" />
-                          {attachmentName}
+                          <FileText className="h-4 w-4" aria-hidden="true" />
+                          <span>{attachmentName}</span>
                         </div>
                       )}
                       <Button
@@ -283,6 +316,7 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
                           form.setValue("attachmentUrl", "");
                           form.setValue("attachmentName", "");
                         }}
+                        aria-label="Remove attachment"
                       >
                         Remove
                       </Button>
