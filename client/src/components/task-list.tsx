@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Trash2, RefreshCw, Timer, Bell, Download, Upload, Layout, Maximize2, Minimize2, Paperclip, Link as LinkIcon, ChevronDown, ChevronUp } from "lucide-react";
+import { Trash2, RefreshCw, Timer, Bell, Download, Upload, Layout, Maximize2, Minimize2, Paperclip, Link as LinkIcon, ChevronDown, ChevronUp, Pencil } from "lucide-react";
 import { format, isPast } from "date-fns";
 import { PomodoroTimer } from "./pomodoro-timer";
 import { TaskTimer } from "./task-timer";
@@ -26,6 +26,7 @@ interface TaskListProps {
   onImportTasks: (tasks: Task[]) => void;
   onTimeUpdate: (taskId: number, timeSpent: number) => void;
   onUpdateStatus: (id: number, status: Task["status"]) => void;
+  onEditTask: (id: number) => void;
   view: "list" | "kanban";
   isFocusMode: boolean;
   onToggleFocusMode: () => void;
@@ -39,6 +40,7 @@ export function TaskList({
   onImportTasks,
   onTimeUpdate,
   onUpdateStatus,
+  onEditTask,
   view,
   isFocusMode,
   onToggleFocusMode,
@@ -242,6 +244,7 @@ export function TaskList({
             onDeleteTask={onDeleteTask}
             onTimeUpdate={onTimeUpdate}
             onUpdateStatus={onUpdateStatus}
+            onEditTask={onEditTask}
           />
         </CardContent>
       </Card>
@@ -503,6 +506,14 @@ export function TaskList({
                   )}
                 >
                   <Timer className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onEditTask(task.id)}
+                  className="text-blue-500"
+                >
+                  <Pencil className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"

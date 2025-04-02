@@ -2,7 +2,7 @@ import { Task, statusOptions } from "@shared/schema";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TaskTimer } from "./task-timer";
 import { Button } from "@/components/ui/button";
-import { Trash2, FileText, Paperclip, GripVertical } from "lucide-react";
+import { Trash2, FileText, Paperclip, GripVertical, Pencil } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,7 @@ interface KanbanBoardProps {
   onDeleteTask: (id: number) => void;
   onTimeUpdate: (taskId: number, timeSpent: number) => void;
   onUpdateStatus: (id: number, status: Task["status"]) => void;
+  onEditTask?: (id: number) => void;
 }
 
 export function KanbanBoard({
@@ -20,6 +21,7 @@ export function KanbanBoard({
   onDeleteTask,
   onTimeUpdate,
   onUpdateStatus,
+  onEditTask,
 }: KanbanBoardProps) {
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [draggingOverColumn, setDraggingOverColumn] = useState<Task["status"] | null>(null);
@@ -101,14 +103,26 @@ export function KanbanBoard({
                         )}
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDeleteTask(task.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-1">
+                      {onEditTask && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onEditTask(task.id)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-500"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDeleteTask(task.id)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
