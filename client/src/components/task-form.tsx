@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { InsertTask, insertTaskSchema, recurrenceOptions, categoryOptions } from "@shared/schema";
+import { InsertTask, insertTaskSchema, recurrenceOptions, categoryOptions, Task } from "@shared/schema";
 import { addDays, format } from "date-fns";
 import { CalendarDays, RefreshCw, CalendarIcon, Paperclip, FileText, X, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 interface TaskFormProps {
   onSubmit: (data: InsertTask) => void;
-  defaultValues?: Partial<InsertTask>;
+  defaultValues?: Partial<InsertTask> | Task;
   onCancel?: () => void;
 }
 
@@ -27,6 +27,16 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
   const [tagInput, setTagInput] = useState("");
   const [linkInput, setLinkInput] = useState("");
   const { toast } = useToast();
+
+  // Process default values to handle both Task and Partial<InsertTask>
+  const processedDefaults = useMemo(() => {
+    // If defaultValues has an id property, it's likely a Task object
+    if (defaultValues && 'id' in defaultValues) {
+      const { id, createdAt, lastStarted, lastCompleted, ...rest } = defaultValues as Task;
+      return rest;
+    }
+    return defaultValues;
+  }, [defaultValues]);
 
   const form = useForm<InsertTask>({
     resolver: zodResolver(insertTaskSchema),
@@ -44,7 +54,7 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
       tags: [],
       links: [],
       notes: "",
-      ...defaultValues,
+      ...processedDefaults,
     },
   });
 
