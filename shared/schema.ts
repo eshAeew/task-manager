@@ -110,41 +110,22 @@ export const categoryOptions = [
 ] as const;
 
 export const XP_REWARDS = {
+  TASK_COMPLETION: 10,
   TASK_COMPLETE: 10,
   HIGH_PRIORITY_BONUS: 5,
   STREAK_BONUS: 2,
   EARLY_COMPLETION: 3,
+  TIME_TRACKING: 1,
 } as const;
 
+// Badge thresholds (XP required to earn badge)
 export const BADGES = {
-  BEGINNER: {
-    id: "beginner",
-    name: "Beginner",
-    description: "Complete your first task",
-    icon: "🎉",
-    requirement: 1,
-  },
-  PRODUCTIVE: {
-    id: "productive",
-    name: "Productivity Champion",
-    description: "Complete 10 tasks in a day",
-    icon: "🏆",
-    requirement: 10,
-  },
-  CONSISTENT: {
-    id: "consistent",
-    name: "Consistency King",
-    description: "Maintain a 5-day streak",
-    icon: "👑",
-    requirement: 5,
-  },
-  SPEEDSTER: {
-    id: "speedster",
-    name: "Speed Demon",
-    description: "Complete 5 tasks before their due date",
-    icon: "⚡",
-    requirement: 5,
-  },
+  'Novice': 0,
+  'Apprentice': 50,
+  'Expert': 200,
+  'Master': 500,
+  'Grandmaster': 1000,
+  'Legend': 2000,
 } as const;
 
 export const priorityColors = {

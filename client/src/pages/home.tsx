@@ -9,6 +9,10 @@ import { TrashBin } from "@/components/trash-bin";
 import { VoiceInput } from "@/components/voice-input";
 import { DateFilter } from "@/components/date-filter";
 import { TaskFilter, TaskFilterOptions } from "@/components/task-filter";
+import { TaskCategories } from "@/components/task-categories";
+import { ProductivityScore } from "@/components/productivity-score";
+import { UpcomingTasks } from "@/components/upcoming-tasks";
+import { CompletionChart } from "@/components/completion-chart";
 import { getTasks, addTask, updateTask, deleteTask } from "@/lib/tasks";
 import type { Task, InsertTask } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -174,8 +178,25 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="mb-8">
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
           <MiniDashboard tasks={tasks} />
+          <ProductivityScore tasks={tasks} />
+        </div>
+
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-1">
+            <TaskCategories tasks={tasks} />
+          </div>
+          <div className="md:col-span-1">
+            <CompletionChart tasks={tasks} />
+          </div>
+          <div className="md:col-span-1">
+            <UpcomingTasks 
+              tasks={tasks} 
+              onToggleComplete={handleToggleComplete}
+              onEditTask={handleEditTask}
+            />
+          </div>
         </div>
 
         <Tabs defaultValue="tasks">

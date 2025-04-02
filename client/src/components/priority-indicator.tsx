@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 
 interface PriorityIndicatorProps {
   priority: string;
@@ -6,35 +6,23 @@ interface PriorityIndicatorProps {
 }
 
 export function PriorityIndicator({ priority, className }: PriorityIndicatorProps) {
-  const getColor = () => {
+  const { color, label } = useMemo(() => {
     switch (priority.toLowerCase()) {
-      case "high":
-        return "bg-red-500 dark:bg-red-600";
-      case "medium":
-        return "bg-yellow-500 dark:bg-yellow-600";
-      case "low":
-        return "bg-blue-500 dark:bg-blue-600";
+      case 'high':
+        return { color: 'bg-red-500', label: 'High' };
+      case 'medium':
+        return { color: 'bg-yellow-500', label: 'Medium' };
+      case 'low':
+        return { color: 'bg-blue-500', label: 'Low' };
       default:
-        return "bg-gray-500 dark:bg-gray-600";
+        return { color: 'bg-gray-400', label: 'Unknown' };
     }
-  };
-
-  const getWidth = () => {
-    switch (priority.toLowerCase()) {
-      case "high":
-        return "w-full";
-      case "medium":
-        return "w-2/3";
-      case "low":
-        return "w-1/3";
-      default:
-        return "w-0";
-    }
-  };
+  }, [priority]);
 
   return (
-    <div className={cn("h-1.5 rounded-full bg-muted overflow-hidden w-16", className)}>
-      <div className={`h-full ${getColor()} ${getWidth()}`} />
+    <div className={`flex items-center gap-1 ${className || ''}`}>
+      <div className={`h-2 w-2 rounded-full ${color}`} />
+      <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   );
 }
