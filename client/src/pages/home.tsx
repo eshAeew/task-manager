@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/task-list";
 import { TaskArchive } from "@/components/task-archive";
-import { BatchActions } from "@/components/batch-actions";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MiniDashboard } from "@/components/mini-dashboard";
 import { TrashBin } from "@/components/trash-bin";
@@ -62,13 +61,6 @@ export default function Home() {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
 
-    // If completing a recurring task, ask for confirmation
-    if (!task.completed && task.recurrence && task.recurrence !== "none") {
-      if (!window.confirm(`Task "${task.title}" is a recurring task. Do you want to mark it as completed for today?`)) {
-        return; // Don't complete if user cancels
-      }
-    }
-
     const updated = updateTask(id, { 
       completed: !task.completed,
       status: !task.completed ? "done" : task.status 
@@ -82,24 +74,6 @@ export default function Home() {
 
   const handleUpdateStatus = (id: number, status: Task["status"]) => {
     const updated = updateTask(id, { status });
-    if (updated) {
-      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
-        prev?.map(t => t.id === id ? updated : t) || []
-      );
-    }
-  };
-  
-  const handleUpdateCategory = (id: number, category: Task["category"]) => {
-    const updated = updateTask(id, { category });
-    if (updated) {
-      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
-        prev?.map(t => t.id === id ? updated : t) || []
-      );
-    }
-  };
-  
-  const handleUpdateDueDate = (id: number, dueDate: Date | null) => {
-    const updated = updateTask(id, { dueDate });
     if (updated) {
       queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
         prev?.map(t => t.id === id ? updated : t) || []
@@ -226,20 +200,6 @@ export default function Home() {
                     onFilterChange={setFilterOptions} 
                   />
                 </div>
-                
-                {filteredTasks.length > 0 && (
-                  <div className="mb-4">
-                    <BatchActions
-                      tasks={filteredTasks}
-                      onToggleComplete={handleToggleComplete}
-                      onDeleteTask={handleDeleteTask}
-                      onUpdateStatus={handleUpdateStatus}
-                      onUpdateCategory={handleUpdateCategory}
-                      onUpdateDueDate={handleUpdateDueDate}
-                    />
-                  </div>
-                )}
-                
                 <TaskList 
                   tasks={filteredTasks}
                   onToggleComplete={handleToggleComplete}

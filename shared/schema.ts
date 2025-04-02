@@ -14,8 +14,8 @@ export const tasks = pgTable("tasks", {
   priority: text("priority", { enum: ["low", "medium", "high"] }).notNull(),
   completed: boolean("completed").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  // Store links as JSON objects in an array
-  links: text("links", { mode: "json" }).array(),
+  // Add links storage
+  links: text("links").array(),
   // Add notes storage
   notes: text("notes"),
   // Existing fields
