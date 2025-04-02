@@ -2,6 +2,8 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import Parser from 'rss-parser';
+import { insertTaskSchema, Task } from "@shared/schema";
+import { z } from "zod";
 
 interface NewsItem {
   title?: string;
@@ -70,11 +72,100 @@ const NEWS_SOURCES = {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
+  // Mock data for categories
+  const categories = [
+    { name: "Work", color: "#8B5CF6", id: 1 },
+    { name: "Personal", color: "#10B981", id: 2 },
+    { name: "Study", color: "#3B82F6", id: 3 },
+    { name: "Shopping", color: "#F59E0B", id: 4 },
+    { name: "Health", color: "#EF4444", id: 5 },
+    { name: "Other", color: "#6B7280", id: 6 },
+  ];
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+  // Task endpoints
+  app.get("/api/tasks", async (_req: Request, res: Response) => {
+    try {
+      const tasks = await storage.getTasks();
+      res.json(tasks);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch tasks" });
+    }
+  });
+
+  app.post("/api/tasks", async (req: Request, res: Response) => {
+    try {
+      // Validate task data
+      const result = insertTaskSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: `Validation error: ${result.error.message}` });
+      }
+      
+      // Create task using storage
+      const task = await storage.createTask(result.data);
+      res.status(201).json(task);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create task" });
+    }
+  });
+  
+  app.get("/api/tasks/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const task = await storage.getTask(id);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      res.json(task);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch task" });
+    }
+  });
+  
+  app.patch("/api/tasks/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const task = await storage.getTask(id);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      const updatedTask = await storage.updateTask(id, req.body);
+      res.json(updatedTask);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update task" });
+    }
+  });
+  
+  app.delete("/api/tasks/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const success = await storage.deleteTask(id);
+      if (!success) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete task" });
+    }
+  });
+
+  app.get("/api/categories", (_req: Request, res: Response) => {
+    res.json(categories);
+  });
   
   // News feed endpoint
   app.get("/api/news", async (req: Request, res: Response) => {
