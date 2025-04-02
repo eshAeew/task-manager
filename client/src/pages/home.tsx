@@ -7,11 +7,12 @@ import { MiniDashboard } from "@/components/mini-dashboard";
 import { TrashBin } from "@/components/trash-bin";
 import { VoiceInput } from "@/components/voice-input";
 import { DateFilter } from "@/components/date-filter";
+import { TaskFilter, TaskFilterOptions } from "@/components/task-filter";
 import { getTasks, addTask, updateTask, deleteTask } from "@/lib/tasks";
 import type { Task, InsertTask } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { suggestTaskPriority } from "@/lib/task-analyzer";
-import { startOfDay, endOfDay, isWithinInterval } from "date-fns";
+import { startOfDay, endOfDay, isWithinInterval, isPast, isToday } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function Home() {
@@ -21,6 +22,11 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [filterOptions, setFilterOptions] = useState<TaskFilterOptions>({
+    showCompleted: true,
+    showNotCompleted: true,
+    showOverdue: false,
+  });
 
   const { data: tasks = [], refetch } = useQuery({
     queryKey: ["/api/tasks"],
@@ -118,17 +124,43 @@ export default function Home() {
     }
   };
 
-  const filteredTasks = selectedDate
-    ? tasks.filter(task => {
-        if (!task.dueDate) return false;
-        // Convert string or Date to Date object safely
-        const taskDueDate = task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate);
-        return isWithinInterval(taskDueDate, {
-          start: startOfDay(selectedDate),
-          end: endOfDay(selectedDate)
-        });
-      })
-    : tasks;
+  // Helper function to determine if a task is overdue
+  const isTaskOverdue = (task: Task): boolean => {
+    if (!task.dueDate) return false;
+    const taskDueDate = task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate);
+    return isPast(taskDueDate) && !isToday(taskDueDate) && !task.completed;
+  };
+
+  // Apply filters in stages
+  const applyDateFilter = (tasks: Task[]): Task[] => {
+    if (!selectedDate) return tasks;
+    
+    return tasks.filter(task => {
+      if (!task.dueDate) return false;
+      // Convert string or Date to Date object safely
+      const taskDueDate = task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate);
+      return isWithinInterval(taskDueDate, {
+        start: startOfDay(selectedDate),
+        end: endOfDay(selectedDate)
+      });
+    });
+  };
+
+  const applyStatusFilters = (tasks: Task[]): Task[] => {
+    return tasks.filter(task => {
+      // Filter by completion status
+      if (task.completed && !filterOptions.showCompleted) return false;
+      if (!task.completed && !filterOptions.showNotCompleted) return false;
+      
+      // Filter by overdue status
+      if (filterOptions.showOverdue && !isTaskOverdue(task)) return false;
+      
+      return true;
+    });
+  };
+
+  // Apply all filters
+  const filteredTasks = applyStatusFilters(applyDateFilter(tasks));
 
   return (
     <div className={`min-h-screen bg-background ${isFocusMode ? 'bg-black/95' : ''}`}>
@@ -156,10 +188,14 @@ export default function Home() {
                 <TaskForm onSubmit={handleAddTask} />
               </div>
               <div>
-                <div className="mb-4">
+                <div className="mb-4 flex justify-between items-center gap-2">
                   <DateFilter
                     selectedDate={selectedDate}
                     onDateSelect={setSelectedDate}
+                  />
+                  <TaskFilter 
+                    filters={filterOptions} 
+                    onFilterChange={setFilterOptions} 
                   />
                 </div>
                 <TaskList 
