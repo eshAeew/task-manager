@@ -190,7 +190,11 @@ export function TaskList({
 
   const handleToggleComplete = (taskId: number) => {
     const task = tasks.find(t => t.id === taskId);
-    if (task?.reminderEnabled) {
+    
+    if (!task) return;
+    
+    // Show notification if reminder is enabled
+    if (task.reminderEnabled) {
       if (Notification.permission === "granted") {
         new Notification(`Task ${task.completed ? 'Uncompleted' : 'Completed'}!`, {
           body: `Task "${task.title}" has been ${task.completed ? 'uncompleted' : 'completed'}.`,
@@ -198,6 +202,7 @@ export function TaskList({
         });
       }
     }
+    
     onToggleComplete(taskId);
   };
 

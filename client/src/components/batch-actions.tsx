@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { Task, categoryOptions, statusOptions } from "@shared/schema";
+import { Task } from "@shared/schema";
+
+// Define local status and category options as strings
+const statusOptions: string[] = ["todo", "in_progress", "done"];
+const categoryOptions: string[] = ["work", "personal", "study", "shopping", "health", "other"];
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import { 
@@ -99,40 +103,46 @@ export function BatchActions({
     
     switch (actionType) {
       case "complete":
-        selectedIds.forEach(id => {
+        for (const id of selectedIds) {
           const task = tasks.find(t => t.id === id);
           if (task && !task.completed) {
-            onToggleComplete(id);
+            if (task.recurrence && task.recurrence !== "none") {
+              if (window.confirm(`Task "${task.title}" is a recurring task. Do you want to mark it as completed for today?`)) {
+                onToggleComplete(id);
+              }
+            } else {
+              onToggleComplete(id);
+            }
           }
-        });
+        }
         break;
       case "uncomplete":
-        selectedIds.forEach(id => {
+        for (const id of selectedIds) {
           const task = tasks.find(t => t.id === id);
           if (task && task.completed) {
             onToggleComplete(id);
           }
-        });
+        }
         break;
       case "status":
-        selectedIds.forEach(id => {
+        for (const id of selectedIds) {
           onUpdateStatus(id, newStatus);
-        });
+        }
         break;
       case "category":
-        selectedIds.forEach(id => {
+        for (const id of selectedIds) {
           onUpdateCategory(id, newCategory);
-        });
+        }
         break;
       case "dueDate":
-        selectedIds.forEach(id => {
+        for (const id of selectedIds) {
           onUpdateDueDate(id, newDueDate);
-        });
+        }
         break;
       case "delete":
-        selectedIds.forEach(id => {
+        for (const id of selectedIds) {
           onDeleteTask(id);
-        });
+        }
         setIsConfirmDeleteOpen(false);
         break;
     }
@@ -284,7 +294,7 @@ export function BatchActions({
               <SelectContent>
                 {statusOptions.map((status) => (
                   <SelectItem key={status} value={status}>
-                    {status.toString().replace(/_/g, " ").toLocaleUpperCase()}
+                    {status.replace(/_/g, " ").toUpperCase()}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -316,7 +326,7 @@ export function BatchActions({
               <SelectContent>
                 {categoryOptions.map((category) => (
                   <SelectItem key={category} value={category}>
-                    {typeof category === 'string' ? category.charAt(0).toUpperCase() + category.slice(1) : category}
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
                   </SelectItem>
                 ))}
               </SelectContent>

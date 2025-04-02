@@ -62,6 +62,13 @@ export default function Home() {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
 
+    // If completing a recurring task, ask for confirmation
+    if (!task.completed && task.recurrence && task.recurrence !== "none") {
+      if (!window.confirm(`Task "${task.title}" is a recurring task. Do you want to mark it as completed for today?`)) {
+        return; // Don't complete if user cancels
+      }
+    }
+
     const updated = updateTask(id, { 
       completed: !task.completed,
       status: !task.completed ? "done" : task.status 
