@@ -12,15 +12,12 @@ import type { Task, InsertTask } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { suggestTaskPriority } from "@/lib/task-analyzer";
 import { startOfDay, endOfDay, isWithinInterval } from "date-fns";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function Home() {
   const queryClient = useQueryClient();
   const [view, setView] = useState<"list" | "kanban">("list");
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
-  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const { data: tasks = [], refetch } = useQuery({
     queryKey: ["/api/tasks"],
@@ -32,27 +29,6 @@ export default function Home() {
     queryClient.setQueryData<Task[]>(["/api/tasks"], (oldTasks) => {
       return [...(oldTasks || []), newTask];
     });
-  };
-
-  const handleEditTask = (taskId: number) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-      setTaskToEdit(task);
-      setEditDialogOpen(true);
-    }
-  };
-
-  const handleUpdateTask = (data: InsertTask) => {
-    if (!taskToEdit) return;
-    
-    const updated = updateTask(taskToEdit.id, data);
-    if (updated) {
-      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
-        prev?.map(t => t.id === taskToEdit.id ? updated : t) || []
-      );
-      setEditDialogOpen(false);
-      setTaskToEdit(null);
-    }
   };
 
   const handleVoiceInput = (transcript: string) => {
@@ -172,7 +148,6 @@ export default function Home() {
                   onImportTasks={handleImportTasks}
                   onTimeUpdate={handleTimeUpdate}
                   onUpdateStatus={handleUpdateStatus}
-                  onEditTask={handleEditTask}
                   view={view}
                   isFocusMode={isFocusMode}
                   onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
@@ -186,22 +161,6 @@ export default function Home() {
           </TabsContent>
         </Tabs>
       </div>
-
-      {/* Edit Task Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Task</DialogTitle>
-          </DialogHeader>
-          {taskToEdit && (
-            <TaskForm 
-              onSubmit={handleUpdateTask} 
-              defaultValues={taskToEdit}
-              onCancel={() => setEditDialogOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
