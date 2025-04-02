@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/task-list";
 import { TaskArchive } from "@/components/task-archive";
+import { BatchActions } from "@/components/batch-actions";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MiniDashboard } from "@/components/mini-dashboard";
 import { TrashBin } from "@/components/trash-bin";
@@ -74,6 +75,24 @@ export default function Home() {
 
   const handleUpdateStatus = (id: number, status: Task["status"]) => {
     const updated = updateTask(id, { status });
+    if (updated) {
+      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
+        prev?.map(t => t.id === id ? updated : t) || []
+      );
+    }
+  };
+  
+  const handleUpdateCategory = (id: number, category: Task["category"]) => {
+    const updated = updateTask(id, { category });
+    if (updated) {
+      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
+        prev?.map(t => t.id === id ? updated : t) || []
+      );
+    }
+  };
+  
+  const handleUpdateDueDate = (id: number, dueDate: Date | null) => {
+    const updated = updateTask(id, { dueDate });
     if (updated) {
       queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
         prev?.map(t => t.id === id ? updated : t) || []
@@ -200,6 +219,20 @@ export default function Home() {
                     onFilterChange={setFilterOptions} 
                   />
                 </div>
+                
+                {filteredTasks.length > 0 && (
+                  <div className="mb-4">
+                    <BatchActions
+                      tasks={filteredTasks}
+                      onToggleComplete={handleToggleComplete}
+                      onDeleteTask={handleDeleteTask}
+                      onUpdateStatus={handleUpdateStatus}
+                      onUpdateCategory={handleUpdateCategory}
+                      onUpdateDueDate={handleUpdateDueDate}
+                    />
+                  </div>
+                )}
+                
                 <TaskList 
                   tasks={filteredTasks}
                   onToggleComplete={handleToggleComplete}
