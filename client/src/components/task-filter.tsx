@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, Circle, AlertTriangle } from "lucide-react";
+import { CheckCircle, Circle, AlertTriangle, Filter } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -59,37 +59,39 @@ export function TaskFilter({ filters, onFilterChange }: TaskFilterProps) {
         <Button 
           variant="outline" 
           size="sm" 
-          className="h-8 border-dashed flex items-center gap-1"
+          className="h-9 flex items-center gap-1.5 bg-background"
         >
+          <Filter className="h-4 w-4 mr-1" />
           <span>Filter</span>
           {activeFilterCount > 0 && (
             <Badge 
               variant="secondary" 
-              className="ml-1 px-1 font-normal rounded-sm"
+              className="ml-1.5 px-1.5 font-normal"
             >
               {activeFilterCount}
             </Badge>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0" align="start">
-        <div className="p-2">
-          <div className="text-sm font-medium py-1.5">Filter by Status</div>
-          <div className="grid gap-2">
-            <div className="flex items-center space-x-2">
+      <PopoverContent className="w-[240px] p-0 shadow-md" align="start">
+        <div className="p-3">
+          <div className="text-sm font-medium py-1.5 px-1">Filter by Status</div>
+          <div className="grid gap-2.5">
+            <div className="flex items-center space-x-2.5">
               <Checkbox 
                 id="completed" 
                 checked={filters.showCompleted}
                 onCheckedChange={(checked) => 
                   handleFilterChange("showCompleted", checked === true)
                 }
+                className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
               />
-              <Label htmlFor="completed" className="flex items-center gap-1 text-sm font-normal">
+              <Label htmlFor="completed" className="flex items-center gap-2 text-sm font-normal cursor-pointer">
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 Completed
               </Label>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2.5">
               <Checkbox 
                 id="not-completed" 
                 checked={filters.showNotCompleted}
@@ -97,39 +99,40 @@ export function TaskFilter({ filters, onFilterChange }: TaskFilterProps) {
                   handleFilterChange("showNotCompleted", checked === true)
                 }
               />
-              <Label htmlFor="not-completed" className="flex items-center gap-1 text-sm font-normal">
+              <Label htmlFor="not-completed" className="flex items-center gap-2 text-sm font-normal cursor-pointer">
                 <Circle className="h-4 w-4 text-gray-500" />
                 Not Completed
               </Label>
             </div>
           </div>
           
-          <Separator className="my-2" />
+          <Separator className="my-3" />
           
-          <div className="text-sm font-medium py-1.5">Filter by Due Date</div>
-          <div className="grid gap-2">
-            <div className="flex items-center space-x-2">
+          <div className="text-sm font-medium py-1.5 px-1">Filter by Due Date</div>
+          <div className="grid gap-2.5">
+            <div className="flex items-center space-x-2.5">
               <Checkbox 
                 id="overdue" 
                 checked={filters.showOverdue}
                 onCheckedChange={(checked) => 
                   handleFilterChange("showOverdue", checked === true)
                 }
+                className="data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
               />
-              <Label htmlFor="overdue" className="flex items-center gap-1 text-sm font-normal">
+              <Label htmlFor="overdue" className="flex items-center gap-2 text-sm font-normal cursor-pointer">
                 <AlertTriangle className="h-4 w-4 text-red-500" />
                 Overdue
               </Label>
             </div>
           </div>
 
-          <Separator className="my-2" />
+          <Separator className="my-3" />
 
           {activeFilterCount > 0 && (
             <Button 
               variant="ghost" 
               size="sm" 
-              className="w-full justify-start text-sm" 
+              className="w-full justify-start text-sm mt-1" 
               onClick={clearFilters}
             >
               Clear filters
