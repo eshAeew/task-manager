@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/task-list";
+import { TaskArchive } from "@/components/task-archive";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MiniDashboard } from "@/components/mini-dashboard";
 import { TrashBin } from "@/components/trash-bin";
@@ -180,6 +181,7 @@ export default function Home() {
         <Tabs defaultValue="tasks">
           <TabsList>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
+            <TabsTrigger value="archive">Task Archive</TabsTrigger>
             <TabsTrigger value="trash">Recycle Bin</TabsTrigger>
           </TabsList>
           <TabsContent value="tasks">
@@ -213,6 +215,16 @@ export default function Home() {
                 />
               </div>
             </div>
+          </TabsContent>
+          <TabsContent value="archive" className="py-4">
+            <div className="mb-4">
+              <h2 className="text-2xl font-bold">Task Archive</h2>
+              <p className="text-muted-foreground">View all tasks in a simplified format</p>
+            </div>
+            <TaskArchive 
+              tasks={tasks} 
+              onEditTask={handleEditTask} 
+            />
           </TabsContent>
           <TabsContent value="trash">
             <TrashBin onRestore={handleRestoreTask} />
