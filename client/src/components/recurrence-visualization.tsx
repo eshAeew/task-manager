@@ -1,8 +1,7 @@
-import { useMemo } from "react";
 import { Task } from "@shared/schema";
-import { format, addDays, addWeeks, addMonths, parseISO } from "date-fns";
-import { Calendar, Clock, RepeatIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { addDays, format, isSameDay } from "date-fns";
+import { CalendarDays, RefreshCw } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface RecurrenceVisualizationProps {
   task: Task;
@@ -10,112 +9,111 @@ interface RecurrenceVisualizationProps {
 }
 
 export function RecurrenceVisualization({ task, compact = false }: RecurrenceVisualizationProps) {
-  // Generate next occurrences based on recurrence pattern
-  const nextOccurrences = useMemo(() => {
-    if (task.recurrence === "none") return [];
-    return generateNextOccurrences(task);
-  }, [task]);
+  if (!task.recurrence || task.recurrence === "none") {
+    return null;
+  }
 
+  // Generate the next 5 occurrences based on recurrence pattern
   const generateNextOccurrences = (task: Task): Date[] => {
-    if (task.recurrence === "none") return [];
+    if (!task.dueDate) return [];
     
-    // Start from either next due date or current date
-    const startDate = task.nextDue 
-      ? new Date(task.nextDue) 
-      : task.dueDate 
-        ? new Date(task.dueDate) 
-        : new Date();
-        
-    // Show next 3 occurrences
     const occurrences: Date[] = [];
-    let lastDate = new Date(startDate);
+    const baseDate = new Date(task.dueDate);
     
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
       let nextDate: Date;
       
       switch (task.recurrence) {
         case "daily":
-          nextDate = addDays(lastDate, 1);
+          nextDate = addDays(baseDate, i);
           break;
         case "weekly":
-          nextDate = addWeeks(lastDate, 1);
+          nextDate = addDays(baseDate, i * 7);
           break;
         case "monthly":
-          nextDate = addMonths(lastDate, 1);
+          const newDate = new Date(baseDate);
+          newDate.setMonth(baseDate.getMonth() + i);
+          nextDate = newDate;
           break;
         case "custom":
-          // Try to parse the interval as a number of days
-          if (task.recurrenceInterval) {
-            const days = parseInt(task.recurrenceInterval);
-            if (!isNaN(days)) {
-              nextDate = addDays(lastDate, days);
-              break;
-            }
+          if (!task.recurrenceInterval) {
+            nextDate = addDays(baseDate, i);
+          } else {
+            const interval = parseInt(task.recurrenceInterval, 10) || 1;
+            nextDate = addDays(baseDate, i * interval);
           }
-          // Default to weekly if custom interval is invalid
-          nextDate = addWeeks(lastDate, 1);
           break;
         default:
-          nextDate = addDays(lastDate, 1);
+          nextDate = addDays(baseDate, i);
       }
       
       occurrences.push(nextDate);
-      lastDate = nextDate;
     }
     
     return occurrences;
   };
 
-  const getRecurrenceText = (task: Task): string => {
-    switch (task.recurrence) {
-      case "daily": return "Repeats daily";
-      case "weekly": return "Repeats weekly";
-      case "monthly": return "Repeats monthly";
-      case "custom": 
-        if (task.recurrenceInterval) {
-          const days = parseInt(task.recurrenceInterval);
-          if (!isNaN(days)) {
-            return `Repeats every ${days} day${days !== 1 ? 's' : ''}`;
-          }
-        }
-        return "Custom repeat";
-      default: return "";
-    }
-  };
+  const nextOccurrences = generateNextOccurrences(task);
+  
+  const getRecurrenceText = () => {
+    const recurrenceMap: Record<string, string> = {
+      daily: "Repeats daily",
+      weekly: "Repeats weekly",
+      monthly: "Repeats monthly",
+      custom: `Repeats every ${task.recurrenceInterval || 1} day(s)`,
+    };
 
-  if (task.recurrence === "none") {
-    return null;
-  }
+    return recurrenceMap[task.recurrence] || "Repeats";
+  };
 
   if (compact) {
     return (
-      <Badge variant="outline" className="flex items-center font-normal">
-        <RepeatIcon className="h-3 w-3 mr-1" />
-        {task.recurrence}
-      </Badge>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded-full">
+              <RefreshCw className="h-3 w-3" />
+              <span>{task.recurrence}</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className="bg-white dark:bg-slate-900 p-3 shadow-lg rounded-lg border">
+            <div className="space-y-2">
+              <p className="font-medium">{getRecurrenceText()}</p>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Next occurrences:</p>
+                <div className="space-y-1">
+                  {nextOccurrences.slice(0, 3).map((date, index) => (
+                    <div key={index} className="flex items-center gap-1 text-xs">
+                      <CalendarDays className="h-3 w-3 text-muted-foreground" />
+                      <span>{format(date, "EEE, MMM d, yyyy")}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
 
   return (
-    <div className="mt-2">
-      <div className="flex items-center mb-1 text-sm text-muted-foreground">
-        <RepeatIcon className="h-3.5 w-3.5 mr-1" />
-        <span>{getRecurrenceText(task)}</span>
+    <div className="border rounded-md p-3 bg-purple-50 dark:bg-purple-950">
+      <div className="flex items-center gap-2 mb-2">
+        <RefreshCw className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+        <h4 className="font-medium text-sm">{getRecurrenceText()}</h4>
       </div>
-      
-      {nextOccurrences.length > 0 && (
-        <div className="text-xs text-muted-foreground space-y-1">
-          <div className="font-medium">Next occurrences:</div>
-          <div className="grid grid-cols-1 gap-1">
-            {nextOccurrences.map((date, index) => (
-              <div key={index} className="flex items-center">
-                <Calendar className="h-3 w-3 mr-1.5" />
-                <span>{format(date, "EEE, MMM d, yyyy")}</span>
-              </div>
-            ))}
-          </div>
+      <div className="space-y-1">
+        <p className="text-xs text-muted-foreground">Next occurrences:</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+          {nextOccurrences.map((date, index) => (
+            <div key={index} className="flex items-center gap-1 text-xs">
+              <CalendarDays className="h-3 w-3 text-muted-foreground" />
+              <span>{format(date, "EEE, MMM d, yyyy")}</span>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }

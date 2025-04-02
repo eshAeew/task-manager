@@ -1,5 +1,6 @@
-import { useMemo } from "react";
-import { differenceInMinutes, differenceInHours, differenceInDays, isPast, isToday } from "date-fns";
+import { differenceInDays, isPast } from "date-fns";
+import { Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface DueDateCountdownProps {
   dueDate: Date | string;
@@ -7,54 +8,29 @@ interface DueDateCountdownProps {
 }
 
 export function DueDateCountdown({ dueDate, className }: DueDateCountdownProps) {
-  const { text, status } = useMemo(() => {
-    const date = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
-    
-    // If date is invalid, return error
-    if (isNaN(date.getTime())) {
-      return { text: "Invalid date", status: "neutral" };
-    }
-    
-    // Check if past
-    if (isPast(date) && !isToday(date)) {
-      return { text: "Overdue!", status: "danger" };
-    }
-    
-    // Calculate differences
-    const now = new Date();
-    const diffMinutes = differenceInMinutes(date, now);
-    const diffHours = differenceInHours(date, now);
-    const diffDays = differenceInDays(date, now);
-    
-    // Determine text and status based on time left
-    if (diffDays > 7) {
-      return { text: `${diffDays} days left`, status: "safe" };
-    } else if (diffDays > 2) {
-      return { text: `${diffDays} days left`, status: "normal" };
-    } else if (diffDays > 0) {
-      return { text: `${diffDays} days left`, status: "warning" };
-    } else if (diffHours > 0) {
-      return { text: `${diffHours} hours left`, status: "urgent" };
-    } else if (diffMinutes > 0) {
-      return { text: `${diffMinutes} minutes left`, status: "critical" };
-    } else {
-      return { text: "Due now", status: "danger" };
-    }
-  }, [dueDate]);
+  const parsedDueDate = dueDate instanceof Date ? dueDate : new Date(dueDate);
+  const today = new Date();
+  const daysLeft = differenceInDays(parsedDueDate, today);
+  const isOverdue = isPast(parsedDueDate) && daysLeft !== 0;
   
-  const statusClassMap = {
-    safe: "text-green-600",
-    normal: "text-blue-600",
-    warning: "text-amber-600",
-    urgent: "text-orange-600",
-    critical: "text-red-600",
-    danger: "text-red-600 font-bold",
-    neutral: "text-gray-600",
+  const getColorClass = () => {
+    if (isOverdue) return "text-red-500 dark:text-red-400";
+    if (daysLeft === 0) return "text-yellow-500 dark:text-yellow-400";
+    if (daysLeft <= 2) return "text-orange-500 dark:text-orange-400";
+    return "text-green-500 dark:text-green-400";
+  };
+  
+  const getMessage = () => {
+    if (isOverdue) return `Overdue by ${Math.abs(daysLeft)} day${Math.abs(daysLeft) === 1 ? '' : 's'}`;
+    if (daysLeft === 0) return "Due today";
+    if (daysLeft === 1) return "Due tomorrow";
+    return `${daysLeft} days left`;
   };
   
   return (
-    <span className={`${statusClassMap[status as keyof typeof statusClassMap]} ${className || ""}`}>
-      {text}
-    </span>
+    <div className={cn("flex items-center gap-1 text-xs font-medium", getColorClass(), className)}>
+      <Clock className="h-3 w-3" />
+      <span>{getMessage()}</span>
+    </div>
   );
 }
