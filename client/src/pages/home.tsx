@@ -12,12 +12,15 @@ import type { Task, InsertTask } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { suggestTaskPriority } from "@/lib/task-analyzer";
 import { startOfDay, endOfDay, isWithinInterval } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function Home() {
   const queryClient = useQueryClient();
   const [view, setView] = useState<"list" | "kanban">("list");
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const { data: tasks = [], refetch } = useQuery({
     queryKey: ["/api/tasks"],
@@ -96,6 +99,24 @@ export default function Home() {
       );
     }
   };
+  
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsEditDialogOpen(true);
+  };
+  
+  const handleUpdateTask = (data: InsertTask) => {
+    if (!editingTask) return;
+    
+    const updated = updateTask(editingTask.id, data);
+    if (updated) {
+      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
+        prev?.map(t => t.id === editingTask.id ? updated : t) || []
+      );
+      setIsEditDialogOpen(false);
+      setEditingTask(null);
+    }
+  };
 
   const filteredTasks = selectedDate
     ? tasks.filter(task => {
@@ -148,6 +169,7 @@ export default function Home() {
                   onImportTasks={handleImportTasks}
                   onTimeUpdate={handleTimeUpdate}
                   onUpdateStatus={handleUpdateStatus}
+                  onEditTask={handleEditTask}
                   view={view}
                   isFocusMode={isFocusMode}
                   onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
@@ -160,6 +182,21 @@ export default function Home() {
             <TrashBin onRestore={handleRestoreTask} />
           </TabsContent>
         </Tabs>
+
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Edit Task</DialogTitle>
+            </DialogHeader>
+            {editingTask && (
+              <TaskForm 
+                onSubmit={handleUpdateTask} 
+                defaultValues={editingTask}
+                onCancel={() => setIsEditDialogOpen(false)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

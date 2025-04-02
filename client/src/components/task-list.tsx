@@ -26,6 +26,7 @@ interface TaskListProps {
   onImportTasks: (tasks: Task[]) => void;
   onTimeUpdate: (taskId: number, timeSpent: number) => void;
   onUpdateStatus: (id: number, status: Task["status"]) => void;
+  onEditTask?: (task: Task) => void;
   view: "list" | "kanban";
   isFocusMode: boolean;
   onToggleFocusMode: () => void;
@@ -39,6 +40,7 @@ export function TaskList({
   onImportTasks,
   onTimeUpdate,
   onUpdateStatus,
+  onEditTask,
   view,
   isFocusMode,
   onToggleFocusMode,
@@ -503,6 +505,13 @@ export function TaskList({
                   )}
                 >
                   <Timer className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onEditTask?.(task)}
+                >
+                  <RefreshCw className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"

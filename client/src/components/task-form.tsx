@@ -638,7 +638,9 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
               Cancel
             </Button>
           )}
-          <Button type="submit">Add Task</Button>
+          <Button type="submit">
+            {defaultValues?.id ? 'Update Task' : 'Add Task'}
+          </Button>
         </div>
       </form>
     </Form>
