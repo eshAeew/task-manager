@@ -15,7 +15,7 @@ import type { Task, InsertTask } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { suggestTaskPriority } from "@/lib/task-analyzer";
 import { startOfDay, endOfDay, isWithinInterval, isPast, isToday } from "date-fns";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+// Dialog imports removed
 import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
@@ -24,8 +24,7 @@ export default function Home() {
   const [view, setView] = useState<"list" | "kanban">("list");
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  // Edit functionality removed
   const [filterOptions, setFilterOptions] = useState<TaskFilterOptions>({
     showCompleted: true,
     showNotCompleted: true,
@@ -111,95 +110,7 @@ export default function Home() {
     }
   };
   
-  const handleEditTask = (task: Task) => {
-    console.log("handleEditTask called with task:", task);
-    setEditingTask(task);
-    setIsEditDialogOpen(true);
-    console.log("Edit dialog should be open now:", isEditDialogOpen);
-  };
-  
-  const handleUpdateTask = (data: InsertTask) => {
-    if (!editingTask) {
-      console.error("Cannot update task: No editing task found");
-      toast({
-        title: "Update failed",
-        description: "No task selected for editing. Please try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    console.log("Updating task with ID:", editingTask.id);
-    console.log("Full update data:", data);
-    
-    // Ensure data is properly cleaned up
-    const cleanData = {
-      ...data,
-      // Make sure links are handled correctly
-      links: Array.isArray(data.links) ? data.links : [],
-      // Handle attachment fields
-      attachmentUrl: data.attachmentUrl || null,
-      attachmentName: data.attachmentName || null,
-      // Handle notes field
-      notes: data.notes || null
-    };
-    
-    console.log("Cleaned data for update:", cleanData);
-    
-    try {
-      // Call the updateTask function
-      console.log("Calling updateTask with ID:", editingTask.id);
-      const updated = updateTask(editingTask.id, cleanData);
-      
-      console.log("Result from updateTask:", updated);
-      
-      if (updated) {
-        console.log("Task updated successfully:", updated);
-        
-        // Update local state
-        queryClient.setQueryData<Task[]>(["/api/tasks"], prev => {
-          console.log("Updating local task cache...");
-          if (!prev) {
-            console.log("No previous tasks in cache");
-            return [updated];
-          }
-          return prev.map(t => t.id === editingTask.id ? updated : t);
-        });
-        
-        // Show success message
-        toast({
-          title: "Task updated",
-          description: "Your task has been successfully updated.",
-        });
-        
-        // Close the dialog
-        setIsEditDialogOpen(false);
-        setEditingTask(null);
-        
-        // Force a refetch to ensure we have the latest data
-        console.log("Refetching tasks...");
-        refetch();
-      } else {
-        console.error("Task update returned null/undefined");
-        console.error("Tasks array from localStorage:", localStorage.getItem("tasks"));
-        
-        // Show error message if task couldn't be updated
-        toast({
-          title: "Update failed",
-          description: "There was a problem updating your task. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error updating task:", error);
-      console.error("Error details:", error instanceof Error ? error.message : String(error));
-      toast({
-        title: "Update error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+  // Edit task functionality removed as requested
 
   // Helper function to determine if a task is overdue
   const isTaskOverdue = (task: Task): boolean => {
@@ -313,7 +224,7 @@ export default function Home() {
                   onImportTasks={handleImportTasks}
                   onTimeUpdate={handleTimeUpdate}
                   onUpdateStatus={handleUpdateStatus}
-                  onEditTask={handleEditTask}
+                  onEditTask={() => {/* Editing disabled */}}
                   view={view}
                   isFocusMode={isFocusMode}
                   onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
@@ -330,7 +241,7 @@ export default function Home() {
             </div>
             <TaskArchive 
               tasks={tasks} 
-              onEditTask={handleEditTask} 
+              onEditTask={() => {/* Editing disabled */}}
             />
           </TabsContent>
           
@@ -339,26 +250,7 @@ export default function Home() {
           </TabsContent>
         </Tabs>
 
-        <Dialog 
-          open={isEditDialogOpen} 
-          onOpenChange={(open) => {
-            console.log("Dialog open state changing to:", open);
-            setIsEditDialogOpen(open);
-          }}
-        >
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Edit Task {editingTask?.id}</DialogTitle>
-            </DialogHeader>
-            {editingTask && (
-              <TaskForm 
-                onSubmit={handleUpdateTask} 
-                defaultValues={editingTask}
-                onCancel={() => setIsEditDialogOpen(false)}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+        {/* Dialog removed - edit functionality removed */}
       </div>
     </div>
   );

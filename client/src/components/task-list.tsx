@@ -519,16 +519,7 @@ export function TaskList({
                 >
                   <Timer className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    console.log("Edit button clicked for task:", task);
-                    onEditTask?.(task);
-                  }}
-                >
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
+                {/* Edit button removed */}
                 <Button
                   variant="ghost"
                   size="icon"
