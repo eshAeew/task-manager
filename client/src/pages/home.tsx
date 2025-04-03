@@ -117,29 +117,56 @@ export default function Home() {
   };
   
   const handleUpdateTask = (data: InsertTask) => {
-    if (!editingTask) return;
-    
-    const updated = updateTask(editingTask.id, data);
-    if (updated) {
-      // Update local state
-      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
-        prev?.map(t => t.id === editingTask.id ? updated : t) || []
-      );
-      
-      // Show success message
-      toast({
-        title: "Task updated",
-        description: "Your task has been successfully updated.",
-      });
-      
-      // Close the dialog
-      setIsEditDialogOpen(false);
-      setEditingTask(null);
-    } else {
-      // Show error message if task couldn't be updated
+    if (!editingTask) {
+      console.error("Cannot update task: No editing task found");
       toast({
         title: "Update failed",
-        description: "There was a problem updating your task. Please try again.",
+        description: "No task selected for editing. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    console.log("Updating task:", editingTask.id);
+    console.log("Update data:", data);
+    
+    try {
+      const updated = updateTask(editingTask.id, data);
+      
+      if (updated) {
+        console.log("Task updated successfully:", updated);
+        
+        // Update local state
+        queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
+          (prev || []).map(t => t.id === editingTask.id ? updated : t)
+        );
+        
+        // Show success message
+        toast({
+          title: "Task updated",
+          description: "Your task has been successfully updated.",
+        });
+        
+        // Close the dialog
+        setIsEditDialogOpen(false);
+        setEditingTask(null);
+        
+        // Force a refetch to ensure we have the latest data
+        refetch();
+      } else {
+        console.error("Task update returned null/undefined");
+        // Show error message if task couldn't be updated
+        toast({
+          title: "Update failed",
+          description: "There was a problem updating your task. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating task:", error);
+      toast({
+        title: "Update error",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     }

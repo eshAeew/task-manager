@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { InsertTask, insertTaskSchema, recurrenceOptions, categoryOptions, Task } from "@shared/schema";
+import { InsertTask, insertTaskSchema, recurrenceOptions, categoryOptions, Task, TaskLink } from "@shared/schema";
 import { addDays, format } from "date-fns";
 import { CalendarDays, RefreshCw, CalendarIcon, Paperclip, FileText, X, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,8 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
   });
 
   const tags = form.watch("tags") || [];
-  const links = form.watch("links") || [];
+  // Ensure links are always in the correct format (array of TaskLink objects)
+  const links = (form.watch("links") || []) as TaskLink[];
 
   const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {

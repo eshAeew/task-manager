@@ -158,43 +158,70 @@ export function addTask(task: InsertTask): Task {
 }
 
 export function updateTask(id: number, updates: Partial<InsertTask>) {
-  const tasks = getTasks();
-  const index = tasks.findIndex(t => t.id === id);
-  if (index === -1) return null;
+  try {
+    console.log("updateTask called with id:", id);
+    console.log("updates:", updates);
+    
+    const tasks = getTasks();
+    const index = tasks.findIndex(t => t.id === id);
+    
+    if (index === -1) {
+      console.error("Task not found with id:", id);
+      return null;
+    }
 
-  const task = tasks[index];
-  
-  // Process the updates to handle date conversions
-  const processedUpdates = { ...updates };
-  
-  // Convert date strings to Date objects
-  if (updates.dueDate) {
-    processedUpdates.dueDate = new Date(updates.dueDate);
-  }
-  
-  if (updates.reminderTime) {
-    processedUpdates.reminderTime = new Date(updates.reminderTime);
-  }
-  
-  // Ensure links are always in the correct format
-  if (updates.links !== undefined && updates.links !== null) {
-    // Force cast to string[] to keep TypeScript happy
-    processedUpdates.links = updates.links as string[];
-  }
+    const task = tasks[index];
+    console.log("Original task:", task);
+    
+    // Process the updates to handle date conversions
+    const processedUpdates = { ...updates };
+    
+    // Convert date strings to Date objects
+    if (updates.dueDate) {
+      processedUpdates.dueDate = new Date(updates.dueDate);
+    }
+    
+    if (updates.reminderTime) {
+      processedUpdates.reminderTime = new Date(updates.reminderTime);
+    }
+    
+    // Carefully handle attachment fields
+    // Only update attachment fields if they are explicitly provided
+    if ('attachmentUrl' in updates) {
+      processedUpdates.attachmentUrl = updates.attachmentUrl;
+    }
+    
+    if ('attachmentName' in updates) {
+      processedUpdates.attachmentName = updates.attachmentName;
+    }
+    
+    // Ensure links are always in the correct format
+    if (updates.links !== undefined) {
+      // Make sure we're using the correct type for links (array of TaskLink objects)
+      processedUpdates.links = updates.links;
+    }
 
-  // Type cast to resolve the type incompatibility
-  const updatedTask = { ...task, ...processedUpdates } as Task;
+    console.log("Processed updates:", processedUpdates);
 
-  // If marking as completed and task is recurring, update lastCompleted and calculate next due date
-  if (updates.completed && !task.completed && task.recurrence !== "none") {
-    updatedTask.lastCompleted = new Date();
-    updatedTask.nextDue = calculateNextDueDate(updatedTask);
-    updatedTask.completed = false; // Reset completion for next occurrence
+    // Type cast to resolve the type incompatibility
+    const updatedTask = { ...task, ...processedUpdates } as Task;
+    console.log("Updated task (before recurrence check):", updatedTask);
+
+    // If marking as completed and task is recurring, update lastCompleted and calculate next due date
+    if (updates.completed && !task.completed && task.recurrence !== "none") {
+      updatedTask.lastCompleted = new Date();
+      updatedTask.nextDue = calculateNextDueDate(updatedTask);
+      updatedTask.completed = false; // Reset completion for next occurrence
+    }
+
+    console.log("Final updated task:", updatedTask);
+    tasks[index] = updatedTask;
+    saveTasks(tasks);
+    return updatedTask;
+  } catch (error) {
+    console.error("Error in updateTask:", error);
+    return null;
   }
-
-  tasks[index] = updatedTask;
-  saveTasks(tasks);
-  return updatedTask;
 }
 
 export function deleteTask(id: number) {

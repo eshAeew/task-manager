@@ -81,8 +81,13 @@ export const insertTaskSchema = createInsertSchema(tasks)
     timeSpent: z.number().int().default(0),
     lastStarted: z.date().optional(),
     xpEarned: z.number().int().default(0),
-    links: z.array(z.string()).nullable().optional(),
-    notes: z.string().optional(),
+    links: z.array(
+      z.object({
+        url: z.string(),
+        title: z.string()
+      })
+    ).nullable().optional(),
+    notes: z.string().nullable().optional(),
   });
 
 export type InsertTask = z.infer<typeof insertTaskSchema>;
