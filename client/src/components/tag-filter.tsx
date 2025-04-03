@@ -16,9 +16,17 @@ interface TagFilterProps {
 
 export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilterProps) {
   const [showAllTags, setShowAllTags] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   
   // Initial number of tags to show in compact mode
   const INITIAL_TAG_COUNT = 10;
+  
+  // Force re-render when toggling tag visibility
+  const toggleTagVisibility = () => {
+    // Use functional updates to ensure state changes correctly
+    setShowAllTags(prev => !prev);
+    setIsExpanded(prev => !prev);
+  };
 
   const handleRemoveTag = (tag: string) => {
     onTagsChange(selectedTags.filter(t => t !== tag));
@@ -36,8 +44,15 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
   const uniqueTags = Array.from(new Set([...availableTags])).sort();
   
   // Get tags to display based on show all toggle
-  const visibleTags = showAllTags ? uniqueTags : uniqueTags.slice(0, INITIAL_TAG_COUNT);
+  // Use isExpanded as a more reliable state for visibility
+  const visibleTags = showAllTags || isExpanded ? uniqueTags : uniqueTags.slice(0, INITIAL_TAG_COUNT);
   const hasMoreTags = uniqueTags.length > INITIAL_TAG_COUNT;
+  
+  // Directly compute display state - helps with theme-specific rendering issues
+  const displayState = {
+    showingAll: showAllTags || isExpanded,
+    hiddenCount: uniqueTags.length - INITIAL_TAG_COUNT
+  };
 
   return (
     <div className="flex-1">
@@ -134,15 +149,19 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
                   </div>
                   
                   {hasMoreTags && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full h-7 text-xs justify-center items-center py-1 px-2 !text-foreground !bg-muted/50 hover:!bg-muted mt-1 border border-input"
-                      onClick={() => setShowAllTags(!showAllTags)}
+                    <div 
+                      className="w-full rounded-md border border-input mt-1 cursor-pointer !bg-muted/50 hover:!bg-muted text-center py-1.5"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        toggleTagVisibility();
+                      }}
                     >
-                      {showAllTags ? "Show Less" : `Show All (${uniqueTags.length - INITIAL_TAG_COUNT} more)`}
-                      <ChevronDown className={`h-3 w-3 ml-1 transition-transform ${showAllTags ? 'rotate-180' : ''}`} />
-                    </Button>
+                      <span className="text-xs !text-foreground font-medium">
+                        {displayState.showingAll ? "Show Less" : `Show All (${displayState.hiddenCount} more)`}
+                        <ChevronDown className={`h-3 w-3 ml-1 inline transition-transform ${displayState.showingAll ? 'rotate-180' : ''}`} />
+                      </span>
+                    </div>
                   )}
                 </div>
               ) : (
