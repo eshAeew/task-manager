@@ -2,7 +2,7 @@ import { Task, statusOptions } from "@shared/schema";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TaskTimer } from "./task-timer";
 import { Button } from "@/components/ui/button";
-import { Trash2, FileText, Paperclip, GripVertical, RefreshCw } from "lucide-react";
+import { Trash2, FileText, Paperclip, GripVertical, Pencil } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -111,7 +111,7 @@ export function KanbanBoard({
                           onClick={() => onEditTask(task)}
                           className="opacity-0 group-hover:opacity-100 transition-opacity"
                         >
-                          <RefreshCw className="h-4 w-4" />
+                          <Pencil className="h-4 w-4" />
                         </Button>
                       )}
                       <Button
