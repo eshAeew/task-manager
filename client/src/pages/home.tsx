@@ -112,8 +112,10 @@ export default function Home() {
   };
   
   const handleEditTask = (task: Task) => {
+    console.log("handleEditTask called with task:", task);
     setEditingTask(task);
     setIsEditDialogOpen(true);
+    console.log("Edit dialog should be open now:", isEditDialogOpen);
   };
   
   const handleUpdateTask = (data: InsertTask) => {
@@ -337,10 +339,16 @@ export default function Home() {
           </TabsContent>
         </Tabs>
 
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <Dialog 
+          open={isEditDialogOpen} 
+          onOpenChange={(open) => {
+            console.log("Dialog open state changing to:", open);
+            setIsEditDialogOpen(open);
+          }}
+        >
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Task</DialogTitle>
+              <DialogTitle>Edit Task {editingTask?.id}</DialogTitle>
             </DialogHeader>
             {editingTask && (
               <>

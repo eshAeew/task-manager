@@ -32,8 +32,18 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
   const processedDefaults = useMemo(() => {
     // If defaultValues has an id property, it's likely a Task object
     if (defaultValues && 'id' in defaultValues) {
+      console.log("Processing defaults from Task object:", defaultValues);
       const { id, createdAt, lastStarted, lastCompleted, ...rest } = defaultValues as Task;
-      return rest;
+      
+      // Ensure links are properly handled
+      const processedRest = {
+        ...rest,
+        // Make sure links is an array
+        links: Array.isArray(rest.links) ? rest.links : []
+      };
+      
+      console.log("Processed defaults:", processedRest);
+      return processedRest;
     }
     return defaultValues;
   }, [defaultValues]);
@@ -204,6 +214,7 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
 
   const handleSubmit = (data: InsertTask) => {
     console.log("TaskForm handleSubmit called with data:", data);
+    console.log("Default values:", defaultValues);
     
     // Ensure attachment fields are properly handled
     const processedData = {
@@ -218,12 +229,14 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
     console.log("TaskForm processed data to submit:", processedData);
     
     try {
+      console.log("About to call onSubmit with processed data");
       onSubmit(processedData);
       console.log("TaskForm onSubmit completed");
       form.reset();
       onCancel?.();
     } catch (error) {
       console.error("Error in handleSubmit:", error);
+      console.error("Error details:", error instanceof Error ? error.message : String(error));
     }
   };
 
@@ -667,9 +680,15 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
               Cancel
             </Button>
           )}
-          <Button type="submit" className="px-8 py-6 text-lg font-medium" onClick={(e) => {
-            console.log("Submit button clicked");
-          }}>
+          <Button 
+            type="submit" 
+            className="px-8 py-6 text-lg font-medium" 
+            onClick={(e) => {
+              console.log("Submit button clicked");
+              console.log("Form state:", form.getValues());
+              console.log("Form errors:", form.formState.errors);
+            }}
+          >
             {defaultValues && 'id' in defaultValues ? 'Update Task' : 'Add Task'}
           </Button>
         </div>

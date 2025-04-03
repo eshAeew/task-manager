@@ -248,7 +248,9 @@ export function updateTask(id: number, updates: Partial<InsertTask>) {
     // Ensure links are always in the correct format
     if (updates.links !== undefined) {
       // Make sure we're using the correct type for links (array of TaskLink objects)
-      processedUpdates.links = updates.links;
+      // Handle the case when links is null or an empty array
+      processedUpdates.links = Array.isArray(updates.links) ? updates.links : [];
+      console.log("Processed links for update:", processedUpdates.links);
     }
 
     console.log("Processed updates:", processedUpdates);

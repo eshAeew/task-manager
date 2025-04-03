@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Task } from "@shared/schema";
+import { Task, TaskLink } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -447,21 +447,28 @@ export function TaskList({
                         Reminder: {format(task.reminderTime, "PPp")}
                       </span>
                     )}
-                    {task.links && task.links.length > 0 && (
+                    {task.links && Array.isArray(task.links) && task.links.length > 0 && (
                       <div className="flex flex-wrap gap-2">
-                        {task.links.map((link, index) => (
-                          <a
-                            key={index}
-                            href={link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer flex items-center gap-1 transition-colors"
-                            title={link.url}
-                          >
-                            <LinkIcon className="h-3 w-3" />
-                            {link.title}
-                          </a>
-                        ))}
+                        {task.links.map((link, index) => {
+                          // Ensure link is in the correct format
+                          const isValidLink = typeof link === 'object' && link !== null && 'url' in link && 'title' in link;
+                          if (!isValidLink) return null;
+                          
+                          // Now TypeScript knows this is a valid link with url and title properties
+                          return (
+                            <a
+                              key={index}
+                              href={link.url as string}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer flex items-center gap-1 transition-colors"
+                              title={link.url as string}
+                            >
+                              <LinkIcon className="h-3 w-3" />
+                              {link.title as string}
+                            </a>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -509,7 +516,10 @@ export function TaskList({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => onEditTask?.(task)}
+                  onClick={() => {
+                    console.log("Edit button clicked for task:", task);
+                    onEditTask?.(task);
+                  }}
                 >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
