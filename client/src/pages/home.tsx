@@ -220,8 +220,8 @@ export default function Home() {
                   />
                 </div>
                 
-                <div className="space-y-4">
-                  <div className="bg-card border rounded-md p-3">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-64">
                     <TagFilter 
                       selectedTags={filterOptions.filterTags}
                       availableTags={Array.from(new Set(
@@ -231,19 +231,21 @@ export default function Home() {
                     />
                   </div>
                   
-                  <TaskList 
-                    tasks={filteredTasks}
-                    onToggleComplete={handleToggleComplete}
-                    onDeleteTask={handleDeleteTask}
-                    onImportTasks={handleImportTasks}
-                    onTimeUpdate={handleTimeUpdate}
-                    onUpdateStatus={handleUpdateStatus}
-                    onEditTask={handleEditTask}
-                    view={view}
-                    isFocusMode={isFocusMode}
-                    onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
-                    onChangeView={(v) => setView(v)}
-                  />
+                  <div className="flex-1">
+                    <TaskList 
+                      tasks={filteredTasks}
+                      onToggleComplete={handleToggleComplete}
+                      onDeleteTask={handleDeleteTask}
+                      onImportTasks={handleImportTasks}
+                      onTimeUpdate={handleTimeUpdate}
+                      onUpdateStatus={handleUpdateStatus}
+                      onEditTask={handleEditTask}
+                      view={view}
+                      isFocusMode={isFocusMode}
+                      onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
+                      onChangeView={(v) => setView(v)}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

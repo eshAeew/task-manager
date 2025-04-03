@@ -55,9 +55,9 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
 
   return (
     <div className="mb-3 flex flex-col">
-      <div className="flex items-center gap-2 mb-2 text-sm font-medium">
+      <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground border-b pb-1.5">
         <Tag className="h-3.5 w-3.5" />
-        <span>Filter by Tags</span>
+        <span className="font-medium">Filter by Tags</span>
       </div>
 
       <div className="flex gap-1.5 items-center mb-3">
