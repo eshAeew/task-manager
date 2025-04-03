@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { X, Plus, ChevronDown } from "lucide-react";
+import { X, ChevronDown, Tag, Filter } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface TagFilterProps {
   selectedTags: string[];
@@ -11,39 +15,20 @@ interface TagFilterProps {
 }
 
 export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilterProps) {
-  const [tagInput, setTagInput] = useState("");
   const [showAllTags, setShowAllTags] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
   
-  // Initial number of tags to show
-  const INITIAL_TAG_COUNT = 6;
-
-  const handleAddTag = (tag: string) => {
-    if (!tag.trim()) return;
-    
-    const normalizedTag = tag.trim().toLowerCase();
-    if (!selectedTags.includes(normalizedTag)) {
-      onTagsChange([...selectedTags, normalizedTag]);
-    }
-    setTagInput("");
-  };
+  // Initial number of tags to show in compact mode
+  const INITIAL_TAG_COUNT = 10;
 
   const handleRemoveTag = (tag: string) => {
     onTagsChange(selectedTags.filter(t => t !== tag));
-  };
-
-  const handleTagInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && tagInput) {
-      e.preventDefault();
-      handleAddTag(tagInput);
-    }
   };
 
   const toggleTag = (tag: string) => {
     if (selectedTags.includes(tag)) {
       handleRemoveTag(tag);
     } else {
-      handleAddTag(tag);
+      onTagsChange([...selectedTags, tag]);
     }
   };
 
@@ -56,117 +41,120 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
 
   return (
     <div className="flex-1">
-      {/* Selected Tags */}
-      <div className="flex flex-wrap gap-1.5">
-        {selectedTags.map(tag => (
-          <Badge 
-            key={tag} 
-            variant="default"
-            className="flex items-center gap-0.5 h-6 text-xs bg-primary/10 text-primary hover:bg-primary/20 border-0"
-          >
-            #{tag}
-            <button
-              className="ml-1 hover:bg-transparent rounded-full focus:outline-none"
-              onClick={() => handleRemoveTag(tag)}
+      <div className="flex items-center gap-2">
+        {/* Selected Tags - show up to 3 selected tags directly in the interface */}
+        <div className="flex flex-wrap gap-1.5 items-center">
+          {selectedTags.slice(0, 3).map(tag => (
+            <Badge 
+              key={tag} 
+              variant="default"
+              className="flex items-center gap-0.5 h-6 text-xs bg-primary/10 text-primary hover:bg-primary/20 border-0"
             >
-              <X className="h-3 w-3" />
-            </button>
-          </Badge>
-        ))}
-        
-        {selectedTags.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 text-xs px-1.5 text-muted-foreground"
-            onClick={() => onTagsChange([])}
-          >
-            Clear
-          </Button>
-        )}
-        
-        {/* Show/Hide available tags toggle */}
-        {uniqueTags.length > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-6 text-xs px-2"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? "Hide Tags" : "Browse Tags"}
-            <ChevronDown className={`h-3 w-3 ml-1 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-          </Button>
-        )}
-      </div>
-      
-      {/* Available tags panel that shows only when expanded */}
-      {isExpanded && (
-        <div className="mt-2 p-2 border rounded-md bg-card">
-          {uniqueTags.length > 0 ? (
-            <>
-              <div className="flex flex-wrap gap-1.5 mb-1">
-                {visibleTags.map(tag => (
-                  <Badge 
-                    key={tag} 
-                    variant={selectedTags.includes(tag) ? "default" : "outline"}
-                    className={`cursor-pointer text-xs ${
-                      selectedTags.includes(tag) 
-                        ? "bg-primary/10 text-primary hover:bg-primary/20 border-0" 
-                        : "bg-card text-muted-foreground hover:bg-accent border border-input"
-                    }`}
-                    onClick={() => toggleTag(tag)}
-                  >
-                    #{tag}
-                  </Badge>
-                ))}
-              </div>
-              
-              {hasMoreTags && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full h-6 text-xs justify-center items-center p-0 text-muted-foreground"
-                  onClick={() => setShowAllTags(!showAllTags)}
-                >
-                  {showAllTags ? "Show Less" : `Show All (${uniqueTags.length - INITIAL_TAG_COUNT} more)`}
-                  <ChevronDown className={`h-3 w-3 ml-1 transition-transform ${showAllTags ? 'rotate-180' : ''}`} />
-                </Button>
-              )}
-            </>
-          ) : (
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs text-muted-foreground">No tags available yet</span>
-            </div>
+              #{tag}
+              <button
+                className="ml-1 hover:bg-transparent rounded-full focus:outline-none"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemoveTag(tag);
+                }}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+          
+          {/* Show count badge if there are more than 3 selected tags */}
+          {selectedTags.length > 3 && (
+            <Badge variant="outline" className="h-6 text-xs">
+              +{selectedTags.length - 3} more
+            </Badge>
           )}
           
-          {/* Add new tag input inside the panel */}
-          <div className="mt-2 flex items-center gap-2 pt-2 border-t">
-            <Input
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleTagInputKeyDown}
-              placeholder="Create new tag..."
-              className="h-7 text-xs"
-            />
-            <Button 
-              variant="outline"
-              size="sm" 
-              className="h-7 text-xs px-2"
-              disabled={!tagInput.trim()}
-              onClick={() => handleAddTag(tagInput)}
+          {/* Clear tags button only if any tags are selected */}
+          {selectedTags.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-xs px-1.5 text-muted-foreground"
+              onClick={() => onTagsChange([])}
             >
-              <Plus className="h-3.5 w-3.5 mr-1" />
-              Add
+              Clear
             </Button>
-          </div>
+          )}
         </div>
-      )}
-      
-      {uniqueTags.length === 0 && !selectedTags.length && (
-        <div className="text-xs text-muted-foreground">
-          No tags available yet
-        </div>
-      )}
+        
+        {/* Tag filter popover containing all available tags */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className={`h-7 px-2 flex gap-1 items-center text-xs ${selectedTags.length > 0 ? 'border-primary/50 text-primary' : ''}`}
+            >
+              <Filter className="h-3.5 w-3.5" />
+              <span>{selectedTags.length > 0 ? `${selectedTags.length} tag${selectedTags.length !== 1 ? 's' : ''} selected` : 'Filter by tags'}</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[325px] p-2">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between pb-1 border-b">
+                <h4 className="text-sm font-medium">Available Tags</h4>
+                {selectedTags.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs px-1.5"
+                    onClick={() => onTagsChange([])}
+                  >
+                    Clear All
+                  </Button>
+                )}
+              </div>
+              
+              {uniqueTags.length > 0 ? (
+                <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+                  <div className="flex flex-wrap gap-1.5">
+                    {visibleTags.map(tag => (
+                      <Badge 
+                        key={tag} 
+                        variant={selectedTags.includes(tag) ? "default" : "outline"}
+                        className={`cursor-pointer text-xs py-1 ${
+                          selectedTags.includes(tag) 
+                            ? "bg-primary/10 text-primary hover:bg-primary/20 border-0" 
+                            : "bg-card text-muted-foreground hover:bg-accent border border-input"
+                        }`}
+                        onClick={() => toggleTag(tag)}
+                      >
+                        #{tag}
+                        {selectedTags.includes(tag) && (
+                          <X className="ml-1 h-3 w-3" />
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+                  
+                  {hasMoreTags && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full h-6 text-xs justify-center items-center p-0 text-muted-foreground"
+                      onClick={() => setShowAllTags(!showAllTags)}
+                    >
+                      {showAllTags ? "Show Less" : `Show All (${uniqueTags.length - INITIAL_TAG_COUNT} more)`}
+                      <ChevronDown className={`h-3 w-3 ml-1 transition-transform ${showAllTags ? 'rotate-180' : ''}`} />
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-4 text-muted-foreground text-sm">
+                  <Tag className="mr-2 h-4 w-4" />
+                  No tags available yet
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 }
