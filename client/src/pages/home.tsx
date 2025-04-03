@@ -221,10 +221,8 @@ export default function Home() {
                     />
                   </div>
                   
-                  <div className="flex flex-wrap gap-2 items-center">
-                    <div className="text-sm text-muted-foreground inline-flex items-center">
-                      <span className="mr-2">Tags:</span>
-                    </div>
+                  <div className="flex gap-2 items-center">
+                    <div className="text-sm text-muted-foreground font-medium">Tags:</div>
                     <TagFilter 
                       selectedTags={filterOptions.filterTags}
                       availableTags={Array.from(new Set(

@@ -84,26 +84,6 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
             Clear
           </Button>
         )}
-
-        {/* Add New Tag inline */}
-        <div className="relative h-6 flex">
-          <Input
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={handleTagInputKeyDown}
-            placeholder="Add tag..."
-            className="h-6 text-xs w-24 pr-6"
-          />
-          <Button 
-            variant="ghost"
-            size="sm" 
-            className="absolute right-0 h-6 w-6 p-0 hover:bg-muted"
-            disabled={!tagInput.trim()}
-            onClick={() => handleAddTag(tagInput)}
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </Button>
-        </div>
         
         {/* Show/Hide available tags toggle */}
         {uniqueTags.length > 0 && (
@@ -120,36 +100,65 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
       </div>
       
       {/* Available tags panel that shows only when expanded */}
-      {isExpanded && uniqueTags.length > 0 && (
+      {isExpanded && (
         <div className="mt-2 p-2 border rounded-md bg-card">
-          <div className="flex flex-wrap gap-1.5 mb-1">
-            {visibleTags.map(tag => (
-              <Badge 
-                key={tag} 
-                variant={selectedTags.includes(tag) ? "default" : "outline"}
-                className={`cursor-pointer text-xs ${
-                  selectedTags.includes(tag) 
-                    ? "bg-primary/10 text-primary hover:bg-primary/20 border-0" 
-                    : "bg-card text-muted-foreground hover:bg-accent border border-input"
-                }`}
-                onClick={() => toggleTag(tag)}
-              >
-                #{tag}
-              </Badge>
-            ))}
-          </div>
-          
-          {hasMoreTags && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full h-6 text-xs justify-center items-center p-0 text-muted-foreground"
-              onClick={() => setShowAllTags(!showAllTags)}
-            >
-              {showAllTags ? "Show Less" : `Show All (${uniqueTags.length - INITIAL_TAG_COUNT} more)`}
-              <ChevronDown className={`h-3 w-3 ml-1 transition-transform ${showAllTags ? 'rotate-180' : ''}`} />
-            </Button>
+          {uniqueTags.length > 0 ? (
+            <>
+              <div className="flex flex-wrap gap-1.5 mb-1">
+                {visibleTags.map(tag => (
+                  <Badge 
+                    key={tag} 
+                    variant={selectedTags.includes(tag) ? "default" : "outline"}
+                    className={`cursor-pointer text-xs ${
+                      selectedTags.includes(tag) 
+                        ? "bg-primary/10 text-primary hover:bg-primary/20 border-0" 
+                        : "bg-card text-muted-foreground hover:bg-accent border border-input"
+                    }`}
+                    onClick={() => toggleTag(tag)}
+                  >
+                    #{tag}
+                  </Badge>
+                ))}
+              </div>
+              
+              {hasMoreTags && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full h-6 text-xs justify-center items-center p-0 text-muted-foreground"
+                  onClick={() => setShowAllTags(!showAllTags)}
+                >
+                  {showAllTags ? "Show Less" : `Show All (${uniqueTags.length - INITIAL_TAG_COUNT} more)`}
+                  <ChevronDown className={`h-3 w-3 ml-1 transition-transform ${showAllTags ? 'rotate-180' : ''}`} />
+                </Button>
+              )}
+            </>
+          ) : (
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs text-muted-foreground">No tags available yet</span>
+            </div>
           )}
+          
+          {/* Add new tag input inside the panel */}
+          <div className="mt-2 flex items-center gap-2 pt-2 border-t">
+            <Input
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleTagInputKeyDown}
+              placeholder="Create new tag..."
+              className="h-7 text-xs"
+            />
+            <Button 
+              variant="outline"
+              size="sm" 
+              className="h-7 text-xs px-2"
+              disabled={!tagInput.trim()}
+              onClick={() => handleAddTag(tagInput)}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Add
+            </Button>
+          </div>
         </div>
       )}
       
