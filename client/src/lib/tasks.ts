@@ -118,8 +118,17 @@ export function saveTasks(tasks: Task[]) {
 
 export function addTask(task: InsertTask): Task {
   const tasks = getTasks();
+  
+  // Process the task to ensure all fields are in the correct format
+  const processedTask = { ...task };
+  
+  // Ensure links are in the correct format
+  if (processedTask.links === undefined) {
+    processedTask.links = null;
+  }
+  
   const newTask: Task = {
-    ...task,
+    ...processedTask,
     id: Date.now(),
     createdAt: new Date(),
     completed: false,
@@ -139,7 +148,10 @@ export function addTask(task: InsertTask): Task {
     tags: task.tags || [],
     attachmentUrl: task.attachmentUrl || null,
     attachmentName: task.attachmentName || null,
-  };
+    links: processedTask.links || null,
+    notes: processedTask.notes || null,
+  } as Task; // Type casting to avoid TypeScript errors
+  
   tasks.push(newTask);
   saveTasks(tasks);
   return newTask;
@@ -148,10 +160,30 @@ export function addTask(task: InsertTask): Task {
 export function updateTask(id: number, updates: Partial<InsertTask>) {
   const tasks = getTasks();
   const index = tasks.findIndex(t => t.id === id);
-  if (index === -1) return;
+  if (index === -1) return null;
 
   const task = tasks[index];
-  const updatedTask = { ...task, ...updates };
+  
+  // Process the updates to handle date conversions
+  const processedUpdates = { ...updates };
+  
+  // Convert date strings to Date objects
+  if (updates.dueDate) {
+    processedUpdates.dueDate = new Date(updates.dueDate);
+  }
+  
+  if (updates.reminderTime) {
+    processedUpdates.reminderTime = new Date(updates.reminderTime);
+  }
+  
+  // Ensure links are always in the correct format
+  if (updates.links !== undefined && updates.links !== null) {
+    // Force cast to string[] to keep TypeScript happy
+    processedUpdates.links = updates.links as string[];
+  }
+
+  // Type cast to resolve the type incompatibility
+  const updatedTask = { ...task, ...processedUpdates } as Task;
 
   // If marking as completed and task is recurring, update lastCompleted and calculate next due date
   if (updates.completed && !task.completed && task.recurrence !== "none") {

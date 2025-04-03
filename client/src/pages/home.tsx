@@ -16,9 +16,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { suggestTaskPriority } from "@/lib/task-analyzer";
 import { startOfDay, endOfDay, isWithinInterval, isPast, isToday } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [view, setView] = useState<"list" | "kanban">("list");
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
@@ -119,11 +121,27 @@ export default function Home() {
     
     const updated = updateTask(editingTask.id, data);
     if (updated) {
+      // Update local state
       queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
-        prev?.map(t => t.id === editingTask.id ? updated as Task : t) || []
+        prev?.map(t => t.id === editingTask.id ? updated : t) || []
       );
+      
+      // Show success message
+      toast({
+        title: "Task updated",
+        description: "Your task has been successfully updated.",
+      });
+      
+      // Close the dialog
       setIsEditDialogOpen(false);
       setEditingTask(null);
+    } else {
+      // Show error message if task couldn't be updated
+      toast({
+        title: "Update failed",
+        description: "There was a problem updating your task. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
