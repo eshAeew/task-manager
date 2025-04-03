@@ -119,7 +119,56 @@
   opacity: 0.12;
 }
 
-/* Wood Theme Elements */
+/* Custom Scrollbar Styling */
+/* For Webkit browsers (Chrome, Safari, newer versions of Opera) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+}
+
+/* Theme-specific scrollbar customizations */
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.4);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.6);
+}
+
+.wood ::-webkit-scrollbar-thumb {
+  background: hsl(25 35% 60% / 0.5);
+  border-radius: 4px;
+}
+
+.wood ::-webkit-scrollbar-thumb:hover {
+  background: hsl(25 35% 50% / 0.6);
+}
+
 .wood .card,
 .wood .popover {
   background-image: linear-gradient(135deg, hsl(30 40% 85% / 0.9), hsl(30 35% 82% / 0.9));
