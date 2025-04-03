@@ -539,15 +539,15 @@ export default function Notes() {
               className="w-full"
             >
               <TabsList className="bg-background/50 dark:bg-background/20 backdrop-blur-sm border-2 grid w-full grid-cols-3">
-                <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="all" className="flex items-center justify-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <BookOpen className="h-4 w-4 mr-2" />
                   All Notes
                 </TabsTrigger>
-                <TabsTrigger value="favorites" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-white">
+                <TabsTrigger value="favorites" className="flex items-center justify-center data-[state=active]:bg-yellow-500 data-[state=active]:text-white">
                   <Star className="h-4 w-4 mr-2" />
                   Favorites
                 </TabsTrigger>
-                <TabsTrigger value="archived" className="data-[state=active]:bg-slate-500 data-[state=active]:text-white">
+                <TabsTrigger value="archived" className="flex items-center justify-center data-[state=active]:bg-slate-500 data-[state=active]:text-white">
                   <Archive className="h-4 w-4 mr-2" />
                   Archived
                 </TabsTrigger>
