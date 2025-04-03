@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, Circle, AlertTriangle, Filter } from "lucide-react";
+import { CheckCircle, Circle, AlertTriangle, Filter, Tag, X } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -10,23 +10,35 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export type TaskFilterOptions = {
   showCompleted: boolean;
   showNotCompleted: boolean;
   showOverdue: boolean;
+  filterTags: string[];
 };
 
 interface TaskFilterProps {
   filters: TaskFilterOptions;
   onFilterChange: (filters: TaskFilterOptions) => void;
+  availableTags?: string[];
 }
 
-export function TaskFilter({ filters, onFilterChange }: TaskFilterProps) {
+export function TaskFilter({ filters, onFilterChange, availableTags = [] }: TaskFilterProps) {
   const [open, setOpen] = useState(false);
+  const [tagInput, setTagInput] = useState("");
 
   // Count active filters
-  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+  const activeFilterCount = 
+    (filters.showCompleted ? 1 : 0) +
+    (filters.showNotCompleted ? 1 : 0) +
+    (filters.showOverdue ? 1 : 0) +
+    (filters.filterTags?.length || 0);
+
+  // Create a list of unique tags from tasks
+  const uniqueTags = Array.from(new Set([...availableTags]));
 
   // Get a summary of active filters for the badge
   const getFilterSummary = (): string => {
@@ -34,6 +46,9 @@ export function TaskFilter({ filters, onFilterChange }: TaskFilterProps) {
     if (filters.showCompleted) parts.push("Completed");
     if (filters.showNotCompleted) parts.push("Not Completed");
     if (filters.showOverdue) parts.push("Overdue");
+    if (filters.filterTags && filters.filterTags.length > 0) {
+      parts.push(`${filters.filterTags.length} tag${filters.filterTags.length > 1 ? 's' : ''}`);
+    }
     
     return parts.join(", ");
   };
@@ -45,11 +60,38 @@ export function TaskFilter({ filters, onFilterChange }: TaskFilterProps) {
     });
   };
 
+  const handleAddTag = (tag: string) => {
+    if (!tag.trim()) return;
+    
+    if (!filters.filterTags?.includes(tag)) {
+      onFilterChange({
+        ...filters,
+        filterTags: [...(filters.filterTags || []), tag.trim().toLowerCase()]
+      });
+    }
+    setTagInput("");
+  };
+
+  const handleRemoveTag = (tag: string) => {
+    onFilterChange({
+      ...filters,
+      filterTags: filters.filterTags?.filter(t => t !== tag) || []
+    });
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && tagInput) {
+      e.preventDefault();
+      handleAddTag(tagInput);
+    }
+  };
+
   const clearFilters = () => {
     onFilterChange({
       showCompleted: true,
       showNotCompleted: true,
       showOverdue: false,
+      filterTags: []
     });
   };
 
@@ -127,6 +169,61 @@ export function TaskFilter({ filters, onFilterChange }: TaskFilterProps) {
           </div>
 
           <Separator className="my-3" />
+          
+          <div className="text-sm font-medium py-1.5 px-1">Filter by Tags</div>
+          <div className="grid gap-2.5">
+            <div className="flex items-center gap-2">
+              <Tag className="h-4 w-4 text-blue-500" />
+              <Input
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagInputKeyDown}
+                placeholder="Add tag filter..."
+                className="h-8 text-sm"
+              />
+            </div>
+            
+            {filters.filterTags && filters.filterTags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 my-2">
+                {filters.filterTags.map(tag => (
+                  <Badge 
+                    key={tag} 
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
+                    #{tag}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 p-0 hover:bg-transparent"
+                      onClick={() => handleRemoveTag(tag)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+            
+            {uniqueTags.length > 0 && (
+              <ScrollArea className="h-24 rounded-md border p-2">
+                <div className="flex flex-wrap gap-1.5">
+                  {uniqueTags.map(tag => (
+                    <Badge 
+                      key={tag} 
+                      variant="outline"
+                      className="cursor-pointer hover:bg-secondary"
+                      onClick={() => handleAddTag(tag)}
+                    >
+                      #{tag}
+                    </Badge>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+
+          <Separator className="my-3" />
 
           {activeFilterCount > 0 && (
             <Button 
@@ -135,7 +232,7 @@ export function TaskFilter({ filters, onFilterChange }: TaskFilterProps) {
               className="w-full justify-start text-sm mt-1" 
               onClick={clearFilters}
             >
-              Clear filters
+              Clear all filters
             </Button>
           )}
         </div>

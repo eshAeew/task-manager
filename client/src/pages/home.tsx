@@ -27,6 +27,7 @@ export default function Home() {
     showCompleted: true,
     showNotCompleted: true,
     showOverdue: false,
+    filterTags: [],
   });
 
   const { data: tasks = [], refetch } = useQuery({
@@ -160,8 +161,24 @@ export default function Home() {
     });
   };
 
+  // Filter by tags
+  const applyTagFilters = (tasks: Task[]): Task[] => {
+    if (!filterOptions.filterTags || filterOptions.filterTags.length === 0) {
+      return tasks;
+    }
+    
+    return tasks.filter(task => {
+      if (!task.tags || task.tags.length === 0) return false;
+      
+      // Check if task has at least one of the selected tags
+      return filterOptions.filterTags.some(tag => 
+        task.tags?.includes(tag)
+      );
+    });
+  };
+
   // Apply all filters
-  const filteredTasks = applyStatusFilters(applyDateFilter(tasks));
+  const filteredTasks = applyTagFilters(applyStatusFilters(applyDateFilter(tasks)));
 
   return (
     <div className={`min-h-screen bg-background ${isFocusMode ? 'bg-black/95' : ''}`}>
@@ -197,7 +214,10 @@ export default function Home() {
                   />
                   <TaskFilter 
                     filters={filterOptions} 
-                    onFilterChange={setFilterOptions} 
+                    onFilterChange={setFilterOptions}
+                    availableTags={Array.from(new Set(
+                      tasks.flatMap(task => task.tags || [])
+                    ))}
                   />
                 </div>
                 <TaskList 
