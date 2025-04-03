@@ -203,17 +203,28 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
   const attachmentName = form.watch("attachmentName");
 
   const handleSubmit = (data: InsertTask) => {
+    console.log("TaskForm handleSubmit called with data:", data);
+    
     // Ensure attachment fields are properly handled
     const processedData = {
       ...data,
       dueDate: data.dueDate || new Date(),
       attachmentUrl: data.attachmentUrl || null,
-      attachmentName: data.attachmentName || null
+      attachmentName: data.attachmentName || null,
+      // Ensure links are properly formatted
+      links: Array.isArray(data.links) ? data.links : []
     };
     
-    onSubmit(processedData);
-    form.reset();
-    onCancel?.();
+    console.log("TaskForm processed data to submit:", processedData);
+    
+    try {
+      onSubmit(processedData);
+      console.log("TaskForm onSubmit completed");
+      form.reset();
+      onCancel?.();
+    } catch (error) {
+      console.error("Error in handleSubmit:", error);
+    }
   };
 
   return (
@@ -650,14 +661,16 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
           />
         )}
 
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-3 mt-8 sticky bottom-0 bg-background py-4 border-t">
           {onCancel && (
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>
           )}
-          <Button type="submit">
-            {defaultValues?.id ? 'Update Task' : 'Add Task'}
+          <Button type="submit" className="px-8 py-6 text-lg font-medium" onClick={(e) => {
+            console.log("Submit button clicked");
+          }}>
+            {defaultValues && 'id' in defaultValues ? 'Update Task' : 'Add Task'}
           </Button>
         </div>
       </form>

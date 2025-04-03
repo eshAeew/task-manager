@@ -127,19 +127,42 @@ export default function Home() {
       return;
     }
     
-    console.log("Updating task:", editingTask.id);
-    console.log("Update data:", data);
+    console.log("Updating task with ID:", editingTask.id);
+    console.log("Full update data:", data);
+    
+    // Ensure data is properly cleaned up
+    const cleanData = {
+      ...data,
+      // Make sure links are handled correctly
+      links: Array.isArray(data.links) ? data.links : [],
+      // Handle attachment fields
+      attachmentUrl: data.attachmentUrl || null,
+      attachmentName: data.attachmentName || null,
+      // Handle notes field
+      notes: data.notes || null
+    };
+    
+    console.log("Cleaned data for update:", cleanData);
     
     try {
-      const updated = updateTask(editingTask.id, data);
+      // Call the updateTask function
+      console.log("Calling updateTask with ID:", editingTask.id);
+      const updated = updateTask(editingTask.id, cleanData);
+      
+      console.log("Result from updateTask:", updated);
       
       if (updated) {
         console.log("Task updated successfully:", updated);
         
         // Update local state
-        queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
-          (prev || []).map(t => t.id === editingTask.id ? updated : t)
-        );
+        queryClient.setQueryData<Task[]>(["/api/tasks"], prev => {
+          console.log("Updating local task cache...");
+          if (!prev) {
+            console.log("No previous tasks in cache");
+            return [updated];
+          }
+          return prev.map(t => t.id === editingTask.id ? updated : t);
+        });
         
         // Show success message
         toast({
@@ -152,9 +175,12 @@ export default function Home() {
         setEditingTask(null);
         
         // Force a refetch to ensure we have the latest data
+        console.log("Refetching tasks...");
         refetch();
       } else {
         console.error("Task update returned null/undefined");
+        console.error("Tasks array from localStorage:", localStorage.getItem("tasks"));
+        
         // Show error message if task couldn't be updated
         toast({
           title: "Update failed",
@@ -164,6 +190,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Error updating task:", error);
+      console.error("Error details:", error instanceof Error ? error.message : String(error));
       toast({
         title: "Update error",
         description: "An unexpected error occurred. Please try again.",
@@ -316,11 +343,35 @@ export default function Home() {
               <DialogTitle>Edit Task</DialogTitle>
             </DialogHeader>
             {editingTask && (
-              <TaskForm 
-                onSubmit={handleUpdateTask} 
-                defaultValues={editingTask}
-                onCancel={() => setIsEditDialogOpen(false)}
-              />
+              <>
+                <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950 rounded border border-amber-200 dark:border-amber-800">
+                  <p className="text-sm text-amber-800 dark:text-amber-300 mb-2">
+                    Editing task ID: {editingTask.id}
+                  </p>
+                  <button 
+                    type="button" 
+                    className="w-full px-4 py-2 bg-blue-500 text-white rounded font-medium text-sm"
+                    onClick={() => {
+                      console.log("Forcing update on task:", editingTask.id);
+                      // Create a minimal update with just the title to test
+                      const minimalUpdate = {
+                        title: editingTask.title,
+                        priority: editingTask.priority || "medium",
+                        category: editingTask.category || "other",
+                        dueDate: editingTask.dueDate || new Date()
+                      };
+                      handleUpdateTask(minimalUpdate as InsertTask);
+                    }}
+                  >
+                    Force Update (Debug)
+                  </button>
+                </div>
+                <TaskForm 
+                  onSubmit={handleUpdateTask} 
+                  defaultValues={editingTask}
+                  onCancel={() => setIsEditDialogOpen(false)}
+                />
+              </>
             )}
           </DialogContent>
         </Dialog>
