@@ -202,6 +202,7 @@ export default function Home() {
             <TabsTrigger value="archive">Task Archive</TabsTrigger>
             <TabsTrigger value="trash">Recycle Bin</TabsTrigger>
           </TabsList>
+          
           <TabsContent value="tasks">
             <div className="grid gap-8 md:grid-cols-[350px,1fr]">
               <div>
@@ -219,31 +220,37 @@ export default function Home() {
                   />
                 </div>
                 
-                <div className="mb-4">
-                  <TagFilter 
-                    selectedTags={filterOptions.filterTags}
-                    availableTags={Array.from(new Set(
-                      tasks.flatMap(task => task.tags || [])
-                    ))}
-                    onTagsChange={(tags) => setFilterOptions({...filterOptions, filterTags: tags})}
-                  />
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-64">
+                    <TagFilter 
+                      selectedTags={filterOptions.filterTags}
+                      availableTags={Array.from(new Set(
+                        tasks.flatMap(task => task.tags || [])
+                      ))}
+                      onTagsChange={(tags) => setFilterOptions({...filterOptions, filterTags: tags})}
+                    />
+                  </div>
+                  
+                  <div className="flex-1">
+                    <TaskList 
+                      tasks={filteredTasks}
+                      onToggleComplete={handleToggleComplete}
+                      onDeleteTask={handleDeleteTask}
+                      onImportTasks={handleImportTasks}
+                      onTimeUpdate={handleTimeUpdate}
+                      onUpdateStatus={handleUpdateStatus}
+                      onEditTask={handleEditTask}
+                      view={view}
+                      isFocusMode={isFocusMode}
+                      onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
+                      onChangeView={(v) => setView(v)}
+                    />
+                  </div>
                 </div>
-                <TaskList 
-                  tasks={filteredTasks}
-                  onToggleComplete={handleToggleComplete}
-                  onDeleteTask={handleDeleteTask}
-                  onImportTasks={handleImportTasks}
-                  onTimeUpdate={handleTimeUpdate}
-                  onUpdateStatus={handleUpdateStatus}
-                  onEditTask={handleEditTask}
-                  view={view}
-                  isFocusMode={isFocusMode}
-                  onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
-                  onChangeView={(v) => setView(v)}
-                />
               </div>
             </div>
           </TabsContent>
+          
           <TabsContent value="archive" className="py-4">
             <div className="mb-4">
               <h2 className="text-2xl font-bold">Task Archive</h2>
@@ -254,6 +261,7 @@ export default function Home() {
               onEditTask={handleEditTask} 
             />
           </TabsContent>
+          
           <TabsContent value="trash">
             <TrashBin onRestore={handleRestoreTask} />
           </TabsContent>
