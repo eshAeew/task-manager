@@ -226,6 +226,7 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
   const handleSubmit = (data: InsertTask) => {
     console.log("TaskForm handleSubmit called with data:", data);
     console.log("Default values:", defaultValues);
+    console.log("Task ID (if edit):", defaultValues && 'id' in defaultValues ? (defaultValues as Task).id : "new task");
     
     // Create a type guard function to validate TaskLinks that we'll use in the form submission
     function isTaskLink(item: any): item is TaskLink {
@@ -273,6 +274,13 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
     } catch (error) {
       console.error("Error in handleSubmit:", error);
       console.error("Error details:", error instanceof Error ? error.message : String(error));
+      
+      // Show error toast for user feedback
+      toast({
+        title: "Error updating task",
+        description: error instanceof Error ? error.message : "Failed to update task",
+        variant: "destructive"
+      });
     }
   };
 
@@ -723,6 +731,14 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
               console.log("Submit button clicked");
               console.log("Form state:", form.getValues());
               console.log("Form errors:", form.formState.errors);
+              
+              // Check if form is submitting with the right method
+              if (form.formState.isSubmitting) {
+                console.log("Form is currently submitting");
+              }
+              
+              // Don't prevent default form submission
+              // e.preventDefault(); - removing this if it exists
             }}
           >
             {defaultValues && 'id' in defaultValues ? 'Update Task' : 'Add Task'}

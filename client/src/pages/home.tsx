@@ -118,24 +118,44 @@ export default function Home() {
   };
   
   const handleUpdateTask = (data: InsertTask) => {
-    if (!taskToEdit) return;
+    console.log("handleUpdateTask called with data:", data);
     
-    const updated = updateTask(taskToEdit.id, data);
-    if (updated) {
-      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
-        prev?.map(t => t.id === taskToEdit.id ? updated : t) || []
-      );
-      toast({
-        title: "Task updated",
-        description: "Your task has been updated successfully",
-      });
-      setIsEditModalOpen(false);
-      setTaskToEdit(null);
-    } else {
+    if (!taskToEdit) {
+      console.error("No task to edit!");
+      return;
+    }
+    
+    console.log("Updating task with ID:", taskToEdit.id);
+    
+    try {
+      const updated = updateTask(taskToEdit.id, data);
+      
+      console.log("Task update result:", updated);
+      
+      if (updated) {
+        queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
+          prev?.map(t => t.id === taskToEdit.id ? updated : t) || []
+        );
+        toast({
+          title: "Task updated",
+          description: "Your task has been updated successfully",
+        });
+        setIsEditModalOpen(false);
+        setTaskToEdit(null);
+      } else {
+        console.error("updateTask returned null");
+        toast({
+          title: "Update failed",
+          description: "Could not update the task. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error updating task:", error);
       toast({
         title: "Error",
-        description: "There was a problem updating your task",
-        variant: "destructive",
+        description: "An error occurred while updating the task",
+        variant: "destructive"
       });
     }
   };
