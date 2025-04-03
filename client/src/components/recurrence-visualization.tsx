@@ -71,12 +71,12 @@ export function RecurrenceVisualization({ task, compact = false }: RecurrenceVis
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center gap-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded-full">
+            <div className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
               <RefreshCw className="h-3 w-3" />
               <span>{task.recurrence}</span>
             </div>
           </TooltipTrigger>
-          <TooltipContent className="bg-white dark:bg-slate-900 p-3 shadow-lg rounded-lg border">
+          <TooltipContent className="bg-background p-3 shadow-lg rounded-lg border">
             <div className="space-y-2">
               <p className="font-medium">{getRecurrenceText()}</p>
               <div className="space-y-1">
@@ -98,9 +98,9 @@ export function RecurrenceVisualization({ task, compact = false }: RecurrenceVis
   }
 
   return (
-    <div className="border rounded-md p-3 bg-purple-50 dark:bg-purple-950">
+    <div className="border rounded-md p-3 bg-background/80 hover:bg-background/90 transition-colors">
       <div className="flex items-center gap-2 mb-2">
-        <RefreshCw className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+        <RefreshCw className="h-4 w-4 text-primary" />
         <h4 className="font-medium text-sm">{getRecurrenceText()}</h4>
       </div>
       <div className="space-y-1">
