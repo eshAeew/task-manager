@@ -351,52 +351,11 @@ export default function Home() {
               <DialogTitle>Edit Task {editingTask?.id}</DialogTitle>
             </DialogHeader>
             {editingTask && (
-              <>
-                <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950 rounded border border-amber-200 dark:border-amber-800">
-                  <p className="text-sm text-amber-800 dark:text-amber-300 mb-2">
-                    Editing task ID: {editingTask.id}
-                  </p>
-                  <button 
-                    type="button" 
-                    className="w-full px-4 py-2 bg-blue-500 text-white rounded font-medium text-sm"
-                    onClick={() => {
-                      console.log("Forcing update on task:", editingTask.id);
-                      
-                      // Call the simple update function directly that we imported
-                      const result = simpleUpdateTask(editingTask.id, editingTask.title + " (Updated)");
-                      console.log("Simple update result:", result);
-                      
-                      if (result) {
-                        // Show success message
-                        toast({
-                          title: "Task updated",
-                          description: "Your task has been successfully updated with the simpler update function.",
-                        });
-                        
-                        // Close the dialog
-                        setIsEditDialogOpen(false);
-                        setEditingTask(null);
-                        
-                        // Force a refetch to ensure we have the latest data
-                        refetch();
-                      } else {
-                        toast({
-                          title: "Update failed",
-                          description: "The simple update function failed.",
-                          variant: "destructive",
-                        });
-                      }
-                    }}
-                  >
-                    Force Update (Debug)
-                  </button>
-                </div>
-                <TaskForm 
-                  onSubmit={handleUpdateTask} 
-                  defaultValues={editingTask}
-                  onCancel={() => setIsEditDialogOpen(false)}
-                />
-              </>
+              <TaskForm 
+                onSubmit={handleUpdateTask} 
+                defaultValues={editingTask}
+                onCancel={() => setIsEditDialogOpen(false)}
+              />
             )}
           </DialogContent>
         </Dialog>

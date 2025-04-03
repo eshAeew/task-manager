@@ -449,23 +449,29 @@ export function TaskList({
                     )}
                     {task.links && Array.isArray(task.links) && task.links.length > 0 && (
                       <div className="flex flex-wrap gap-2">
-                        {task.links.map((link, index) => {
-                          // Ensure link is in the correct format
-                          const isValidLink = typeof link === 'object' && link !== null && 'url' in link && 'title' in link;
-                          if (!isValidLink) return null;
+                        {task.links.map((rawLink, index) => {
+                          // Type guard function to check if link is in the correct format
+                          function isValidTaskLink(link: any): link is { url: string; title: string } {
+                            return typeof link === 'object' && link !== null && 
+                              'url' in link && typeof link.url === 'string' &&
+                              'title' in link && typeof link.title === 'string';
+                          }
                           
-                          // Now TypeScript knows this is a valid link with url and title properties
+                          // Skip invalid links
+                          if (!isValidTaskLink(rawLink)) return null;
+                          
+                          // With type guard, TypeScript now knows this is a valid link
                           return (
                             <a
                               key={index}
-                              href={link.url as string}
+                              href={rawLink.url}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer flex items-center gap-1 transition-colors"
-                              title={link.url as string}
+                              title={rawLink.url}
                             >
                               <LinkIcon className="h-3 w-3" />
-                              {link.title as string}
+                              {rawLink.title}
                             </a>
                           );
                         })}

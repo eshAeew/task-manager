@@ -223,41 +223,63 @@ export function updateTask(id: number, updates: Partial<InsertTask>) {
     const task = tasks[index];
     console.log("Original task:", task);
     
-    // Process the updates to handle date conversions
-    const processedUpdates = { ...updates };
-    
-    // Convert date strings to Date objects
-    if (updates.dueDate) {
-      processedUpdates.dueDate = new Date(updates.dueDate);
-    }
-    
-    if (updates.reminderTime) {
-      processedUpdates.reminderTime = new Date(updates.reminderTime);
-    }
-    
-    // Carefully handle attachment fields
-    // Only update attachment fields if they are explicitly provided
-    if ('attachmentUrl' in updates) {
-      processedUpdates.attachmentUrl = updates.attachmentUrl;
-    }
-    
-    if ('attachmentName' in updates) {
-      processedUpdates.attachmentName = updates.attachmentName;
-    }
-    
-    // Ensure links are always in the correct format
-    if (updates.links !== undefined) {
-      // Make sure we're using the correct type for links (array of TaskLink objects)
-      // Handle the case when links is null or an empty array
-      processedUpdates.links = Array.isArray(updates.links) ? updates.links : [];
-      console.log("Processed links for update:", processedUpdates.links);
-    }
+    // Create a new task object with all properties preserved
+    const updatedTask: Task = {
+      // Keep original values
+      id: task.id,
+      createdAt: task.createdAt,
+      lastStarted: task.lastStarted,
+      lastCompleted: task.lastCompleted,
+      nextDue: task.nextDue,
+      
+      // Update with new values
+      title: updates.title !== undefined ? updates.title : task.title,
+      priority: updates.priority !== undefined ? updates.priority : task.priority,
+      category: updates.category !== undefined ? updates.category : task.category,
+      status: updates.status !== undefined ? updates.status : task.status,
+      completed: updates.completed !== undefined ? updates.completed : task.completed,
+      
+      // Special field handling
+      tags: updates.tags !== undefined ? updates.tags : (task.tags || []),
+      timeSpent: updates.timeSpent !== undefined ? updates.timeSpent : (task.timeSpent || 0),
+      xpEarned: updates.xpEarned !== undefined ? updates.xpEarned : (task.xpEarned || 0),
+      
+      // Handle date fields
+      dueDate: updates.dueDate !== undefined ? new Date(updates.dueDate) : task.dueDate,
+      
+      // Handle recurrence fields
+      recurrence: updates.recurrence !== undefined ? updates.recurrence : task.recurrence,
+      recurrenceInterval: updates.recurrenceInterval !== undefined 
+        ? updates.recurrenceInterval 
+        : task.recurrenceInterval,
+        
+      // Handle reminder fields
+      reminderEnabled: updates.reminderEnabled !== undefined 
+        ? updates.reminderEnabled 
+        : task.reminderEnabled,
+      reminderTime: updates.reminderTime !== undefined 
+        ? new Date(updates.reminderTime) 
+        : task.reminderTime,
+      
+      // Handle nullable fields
+      notes: updates.notes !== undefined ? updates.notes : task.notes,
+      attachmentUrl: updates.attachmentUrl !== undefined ? updates.attachmentUrl : task.attachmentUrl,
+      attachmentName: updates.attachmentName !== undefined ? updates.attachmentName : task.attachmentName,
+      
+      // Special handling for links to ensure correct format
+      links: updates.links !== undefined
+        ? Array.isArray(updates.links)
+          ? updates.links
+              .filter(link => typeof link === 'object' && link !== null && 'url' in link && 'title' in link)
+              .map(link => ({ 
+                url: (link as any).url, 
+                title: (link as any).title 
+              }))
+          : []
+        : (task.links || [])
+    };
 
-    console.log("Processed updates:", processedUpdates);
-
-    // Type cast to resolve the type incompatibility
-    const updatedTask = { ...task, ...processedUpdates } as Task;
-    console.log("Updated task (before recurrence check):", updatedTask);
+    console.log("Fully rebuilt task:", updatedTask);
 
     // If marking as completed and task is recurring, update lastCompleted and calculate next due date
     if (updates.completed && !task.completed && task.recurrence !== "none") {
@@ -272,6 +294,7 @@ export function updateTask(id: number, updates: Partial<InsertTask>) {
     return updatedTask;
   } catch (error) {
     console.error("Error in updateTask:", error);
+    console.error("Error details:", error instanceof Error ? error.message : String(error));
     return null;
   }
 }

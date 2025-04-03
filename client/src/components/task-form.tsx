@@ -72,7 +72,18 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
 
   const tags = form.watch("tags") || [];
   // Ensure links are always in the correct format (array of TaskLink objects)
-  const links = (form.watch("links") || []) as TaskLink[];
+  const rawLinks = form.watch("links") || [];
+  
+  // Create a type guard function to validate TaskLinks
+  function isTaskLink(item: any): item is TaskLink {
+    return typeof item === 'object' && item !== null &&
+      'url' in item && typeof item.url === 'string' &&
+      'title' in item && typeof item.title === 'string';
+  }
+  
+  const links = Array.isArray(rawLinks) 
+    ? rawLinks.filter(isTaskLink)
+    : [];
 
   const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
@@ -216,14 +227,39 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
     console.log("TaskForm handleSubmit called with data:", data);
     console.log("Default values:", defaultValues);
     
-    // Ensure attachment fields are properly handled
+    // Create a type guard function to validate TaskLinks that we'll use in the form submission
+    function isTaskLink(item: any): item is TaskLink {
+      return typeof item === 'object' && item !== null &&
+        'url' in item && typeof item.url === 'string' &&
+        'title' in item && typeof item.title === 'string';
+    }
+    
+    // Process data carefully for submission
     const processedData = {
       ...data,
+      // Make sure we have default values for required fields
+      title: data.title || "",
+      priority: data.priority || "medium",
+      category: data.category || "other",
+      status: data.status || "todo",
+      completed: data.completed ?? false,
+      
+      // Make sure we handle date fields properly
       dueDate: data.dueDate || new Date(),
+      reminderTime: data.reminderTime || undefined,
+      
+      // Nullable fields
       attachmentUrl: data.attachmentUrl || null,
       attachmentName: data.attachmentName || null,
-      // Ensure links are properly formatted
-      links: Array.isArray(data.links) ? data.links : []
+      notes: data.notes || null,
+      
+      // Carefully process links to make sure they're valid
+      links: Array.isArray(data.links) 
+        ? data.links.filter(isTaskLink) 
+        : [],
+      
+      // Make sure tags are an array
+      tags: Array.isArray(data.tags) ? data.tags : []
     };
     
     console.log("TaskForm processed data to submit:", processedData);
