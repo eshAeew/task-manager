@@ -514,7 +514,11 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
                 <Textarea
                   placeholder="Add notes about this task..."
                   className="resize-none"
-                  {...field}
+                  value={field.value || ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                  ref={field.ref}
                 />
               </FormControl>
               <FormMessage />
@@ -550,7 +554,7 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={field.value}
+                    selected={field.value || undefined}
                     onSelect={field.onChange}
                     initialFocus
                   />
@@ -594,7 +598,15 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
               <FormItem>
                 <FormLabel>Custom Interval (days)</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="Enter number of days..." {...field} />
+                  <Input 
+                    type="number" 
+                    placeholder="Enter number of days..." 
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    ref={field.ref}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -706,7 +718,7 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={field.value}
+                      selected={field.value || undefined}
                       onSelect={field.onChange}
                       initialFocus
                     />
