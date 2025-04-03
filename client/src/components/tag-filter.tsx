@@ -95,7 +95,7 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
               <span>{selectedTags.length > 0 ? `${selectedTags.length} tag${selectedTags.length !== 1 ? 's' : ''} selected` : 'Filter by tags'}</span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[325px] p-3 shadow-md">
+          <PopoverContent className="w-[325px] p-3 shadow-md !bg-popover !text-popover-foreground">
             <div className="space-y-2">
               <div className="flex items-center justify-between pb-1 border-b">
                 <h4 className="text-sm font-medium">Available Tags</h4>
@@ -120,8 +120,8 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
                         variant={selectedTags.includes(tag) ? "default" : "outline"}
                         className={`cursor-pointer text-xs py-1.5 ${
                           selectedTags.includes(tag) 
-                            ? "bg-primary/10 text-primary hover:bg-primary/20 border-0" 
-                            : "bg-card text-muted-foreground hover:bg-accent border border-input"
+                            ? "!bg-primary/10 !text-primary hover:!bg-primary/20 !border-0" 
+                            : "!bg-background !text-muted-foreground hover:!bg-accent border !border-input"
                         }`}
                         onClick={() => toggleTag(tag)}
                       >
@@ -135,9 +135,9 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
                   
                   {hasMoreTags && (
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      className="w-full h-6 text-xs justify-center items-center p-0 text-muted-foreground mt-1"
+                      className="w-full h-7 text-xs justify-center items-center py-1 px-2 !text-foreground !bg-muted/50 hover:!bg-muted mt-1 border border-input"
                       onClick={() => setShowAllTags(!showAllTags)}
                     >
                       {showAllTags ? "Show Less" : `Show All (${uniqueTags.length - INITIAL_TAG_COUNT} more)`}
