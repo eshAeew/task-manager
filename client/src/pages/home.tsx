@@ -10,7 +10,7 @@ import { VoiceInput } from "@/components/voice-input";
 import { DateFilter } from "@/components/date-filter";
 import { TaskFilter, TaskFilterOptions } from "@/components/task-filter";
 import { TagFilter } from "@/components/tag-filter";
-import { getTasks, addTask, updateTask, deleteTask } from "@/lib/tasks";
+import { getTasks, addTask, updateTask, deleteTask, simpleUpdateTask } from "@/lib/tasks";
 import type { Task, InsertTask } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { suggestTaskPriority } from "@/lib/task-analyzer";
@@ -354,10 +354,7 @@ export default function Home() {
                     onClick={() => {
                       console.log("Forcing update on task:", editingTask.id);
                       
-                      // Import the simpleUpdateTask function
-                      const { simpleUpdateTask } = require('@/lib/tasks');
-                      
-                      // Call the simple update function directly
+                      // Call the simple update function directly that we imported
                       const result = simpleUpdateTask(editingTask.id, editingTask.title + " (Updated)");
                       console.log("Simple update result:", result);
                       
