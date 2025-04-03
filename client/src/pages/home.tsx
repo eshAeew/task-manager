@@ -209,19 +209,22 @@ export default function Home() {
                 <TaskForm onSubmit={handleAddTask} />
               </div>
               <div>
-                <div className="mb-4 flex justify-between items-center gap-2">
-                  <DateFilter
-                    selectedDate={selectedDate}
-                    onDateSelect={setSelectedDate}
-                  />
-                  <TaskFilter 
-                    filters={filterOptions} 
-                    onFilterChange={setFilterOptions}
-                  />
-                </div>
-                
-                <div className="flex items-start gap-4 mb-4">
-                  <div className="w-64">
+                <div className="flex flex-col gap-3 mb-4">
+                  <div className="flex justify-between items-center">
+                    <DateFilter
+                      selectedDate={selectedDate}
+                      onDateSelect={setSelectedDate}
+                    />
+                    <TaskFilter 
+                      filters={filterOptions} 
+                      onFilterChange={setFilterOptions}
+                    />
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <div className="text-sm text-muted-foreground inline-flex items-center">
+                      <span className="mr-2">Tags:</span>
+                    </div>
                     <TagFilter 
                       selectedTags={filterOptions.filterTags}
                       availableTags={Array.from(new Set(
@@ -230,23 +233,21 @@ export default function Home() {
                       onTagsChange={(tags) => setFilterOptions({...filterOptions, filterTags: tags})}
                     />
                   </div>
-                  
-                  <div className="flex-1">
-                    <TaskList 
-                      tasks={filteredTasks}
-                      onToggleComplete={handleToggleComplete}
-                      onDeleteTask={handleDeleteTask}
-                      onImportTasks={handleImportTasks}
-                      onTimeUpdate={handleTimeUpdate}
-                      onUpdateStatus={handleUpdateStatus}
-                      onEditTask={handleEditTask}
-                      view={view}
-                      isFocusMode={isFocusMode}
-                      onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
-                      onChangeView={(v) => setView(v)}
-                    />
-                  </div>
                 </div>
+                
+                <TaskList 
+                  tasks={filteredTasks}
+                  onToggleComplete={handleToggleComplete}
+                  onDeleteTask={handleDeleteTask}
+                  onImportTasks={handleImportTasks}
+                  onTimeUpdate={handleTimeUpdate}
+                  onUpdateStatus={handleUpdateStatus}
+                  onEditTask={handleEditTask}
+                  view={view}
+                  isFocusMode={isFocusMode}
+                  onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
+                  onChangeView={(v) => setView(v)}
+                />
               </div>
             </div>
           </TabsContent>

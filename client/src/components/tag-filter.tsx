@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Tag, X, Plus, ChevronDown } from "lucide-react";
+import { X, Plus, ChevronDown } from "lucide-react";
 
 interface TagFilterProps {
   selectedTags: string[];
@@ -13,6 +13,7 @@ interface TagFilterProps {
 export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilterProps) {
   const [tagInput, setTagInput] = useState("");
   const [showAllTags, setShowAllTags] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   
   // Initial number of tags to show
   const INITIAL_TAG_COUNT = 6;
@@ -54,65 +55,74 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
   const hasMoreTags = uniqueTags.length > INITIAL_TAG_COUNT;
 
   return (
-    <div className="mb-3 flex flex-col">
-      <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground border-b pb-1.5">
-        <Tag className="h-3.5 w-3.5" />
-        <span className="font-medium">Filter by Tags</span>
-      </div>
+    <div className="flex-1">
+      {/* Selected Tags */}
+      <div className="flex flex-wrap gap-1.5">
+        {selectedTags.map(tag => (
+          <Badge 
+            key={tag} 
+            variant="default"
+            className="flex items-center gap-0.5 h-6 text-xs bg-primary/10 text-primary hover:bg-primary/20 border-0"
+          >
+            #{tag}
+            <button
+              className="ml-1 hover:bg-transparent rounded-full focus:outline-none"
+              onClick={() => handleRemoveTag(tag)}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        ))}
+        
+        {selectedTags.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-xs px-1.5 text-muted-foreground"
+            onClick={() => onTagsChange([])}
+          >
+            Clear
+          </Button>
+        )}
 
-      <div className="flex gap-1.5 items-center mb-3">
-        <Input
-          value={tagInput}
-          onChange={(e) => setTagInput(e.target.value)}
-          onKeyDown={handleTagInputKeyDown}
-          placeholder="Add new tag..."
-          className="h-8 text-xs bg-background"
-        />
-        <Button 
-          variant="outline"
-          size="sm" 
-          className="h-8 text-xs px-2 hover:bg-muted"
-          disabled={!tagInput.trim()}
-          onClick={() => handleAddTag(tagInput)}
-        >
-          <Plus className="h-3.5 w-3.5 mr-1" />
-          Add
-        </Button>
+        {/* Add New Tag inline */}
+        <div className="relative h-6 flex">
+          <Input
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={handleTagInputKeyDown}
+            placeholder="Add tag..."
+            className="h-6 text-xs w-24 pr-6"
+          />
+          <Button 
+            variant="ghost"
+            size="sm" 
+            className="absolute right-0 h-6 w-6 p-0 hover:bg-muted"
+            disabled={!tagInput.trim()}
+            onClick={() => handleAddTag(tagInput)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+        
+        {/* Show/Hide available tags toggle */}
+        {uniqueTags.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-6 text-xs px-2"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            {isExpanded ? "Hide Tags" : "Browse Tags"}
+            <ChevronDown className={`h-3 w-3 ml-1 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+          </Button>
+        )}
       </div>
       
-      {selectedTags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {selectedTags.map(tag => (
-            <Badge 
-              key={tag} 
-              variant="default"
-              className="flex items-center gap-0.5 text-xs bg-primary/10 text-primary hover:bg-primary/20 border-0"
-            >
-              #{tag}
-              <button
-                className="ml-1 hover:bg-transparent rounded-full focus:outline-none"
-                onClick={() => handleRemoveTag(tag)}
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
-          {selectedTags.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-5 text-xs px-1.5 text-muted-foreground"
-              onClick={() => onTagsChange([])}
-            >
-              Clear
-            </Button>
-          )}
-        </div>
-      )}
-        
-      {uniqueTags.length > 0 ? (
-        <div className="mt-1 w-full">
-          <div className="flex flex-wrap gap-1.5 mb-1.5">
+      {/* Available tags panel that shows only when expanded */}
+      {isExpanded && uniqueTags.length > 0 && (
+        <div className="mt-2 p-2 border rounded-md bg-card">
+          <div className="flex flex-wrap gap-1.5 mb-1">
             {visibleTags.map(tag => (
               <Badge 
                 key={tag} 
@@ -120,7 +130,7 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
                 className={`cursor-pointer text-xs ${
                   selectedTags.includes(tag) 
                     ? "bg-primary/10 text-primary hover:bg-primary/20 border-0" 
-                    : "bg-background text-muted-foreground hover:bg-muted border border-input"
+                    : "bg-card text-muted-foreground hover:bg-accent border border-input"
                 }`}
                 onClick={() => toggleTag(tag)}
               >
@@ -136,13 +146,15 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
               className="w-full h-6 text-xs justify-center items-center p-0 text-muted-foreground"
               onClick={() => setShowAllTags(!showAllTags)}
             >
-              {showAllTags ? "Show Less" : `Load More (${uniqueTags.length - INITIAL_TAG_COUNT})`}
-              <ChevronDown className={`h-3.5 w-3.5 ml-1 transition-transform ${showAllTags ? 'rotate-180' : ''}`} />
+              {showAllTags ? "Show Less" : `Show All (${uniqueTags.length - INITIAL_TAG_COUNT} more)`}
+              <ChevronDown className={`h-3 w-3 ml-1 transition-transform ${showAllTags ? 'rotate-180' : ''}`} />
             </Button>
           )}
         </div>
-      ) : (
-        <div className="text-center text-xs text-muted-foreground mt-1 py-2 border rounded-md">
+      )}
+      
+      {uniqueTags.length === 0 && !selectedTags.length && (
+        <div className="text-xs text-muted-foreground">
           No tags available yet
         </div>
       )}
