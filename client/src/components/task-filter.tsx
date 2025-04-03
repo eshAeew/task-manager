@@ -115,7 +115,7 @@ export function TaskFilter({ filters, onFilterChange, availableTags = [] }: Task
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[240px] p-0 shadow-md" align="start">
+      <PopoverContent className="w-[300px] p-0 shadow-md" align="start">
         <div className="p-3">
           <div className="text-sm font-medium py-1.5 px-1">Filter by Status</div>
           <div className="grid gap-2.5">
@@ -172,19 +172,26 @@ export function TaskFilter({ filters, onFilterChange, availableTags = [] }: Task
           
           <div className="text-sm font-medium py-1.5 px-1">Filter by Tags</div>
           <div className="grid gap-2.5">
-            <div className="flex items-center gap-2">
-              <Tag className="h-4 w-4 text-blue-500" />
-              <Input
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={handleTagInputKeyDown}
-                placeholder="Add tag filter..."
-                className="h-8 text-sm"
-              />
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1">
+                <Tag className="h-4 w-4 text-blue-500" />
+                <span className="text-sm">Select tags to filter</span>
+              </div>
+              {filters.filterTags.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => onFilterChange({...filters, filterTags: []})}
+                >
+                  Clear
+                </Button>
+              )}
             </div>
             
-            {filters.filterTags && filters.filterTags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 my-2">
+            {filters.filterTags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2 p-2 bg-muted/50 rounded-md">
+                <div className="w-full text-xs text-muted-foreground mb-1.5">Selected:</div>
                 {filters.filterTags.map(tag => (
                   <Badge 
                     key={tag} 
@@ -205,22 +212,38 @@ export function TaskFilter({ filters, onFilterChange, availableTags = [] }: Task
               </div>
             )}
             
-            {uniqueTags.length > 0 && (
-              <ScrollArea className="h-24 rounded-md border p-2">
+            <div className="rounded-md border overflow-hidden">
+              <div className="p-2 bg-muted/30 border-b">
+                <Input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleTagInputKeyDown}
+                  placeholder="Add new tag..."
+                  className="h-7 text-sm"
+                />
+              </div>
+              
+              <ScrollArea className="h-32 p-2">
                 <div className="flex flex-wrap gap-1.5">
-                  {uniqueTags.map(tag => (
-                    <Badge 
-                      key={tag} 
-                      variant="outline"
-                      className="cursor-pointer hover:bg-secondary"
-                      onClick={() => handleAddTag(tag)}
-                    >
-                      #{tag}
-                    </Badge>
-                  ))}
+                  {uniqueTags.length > 0 ? (
+                    uniqueTags.map(tag => (
+                      <Badge 
+                        key={tag} 
+                        variant={filters.filterTags.includes(tag) ? "default" : "outline"}
+                        className={`cursor-pointer ${filters.filterTags.includes(tag) ? "" : "hover:bg-secondary"}`}
+                        onClick={() => filters.filterTags.includes(tag) ? handleRemoveTag(tag) : handleAddTag(tag)}
+                      >
+                        #{tag}
+                      </Badge>
+                    ))
+                  ) : (
+                    <div className="w-full text-center text-sm text-muted-foreground py-4">
+                      No tags available yet
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
-            )}
+            </div>
           </div>
 
           <Separator className="my-3" />
