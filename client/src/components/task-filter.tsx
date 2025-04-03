@@ -172,16 +172,16 @@ export function TaskFilter({ filters, onFilterChange, availableTags = [] }: Task
           
           <div className="text-sm font-medium py-1.5 px-1">Filter by Tags</div>
           <div className="grid gap-2.5">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-1">
                 <Tag className="h-4 w-4 text-blue-500" />
-                <span className="text-sm">Select tags to filter</span>
+                <span className="text-xs">Select tags</span>
               </div>
               {filters.filterTags.length > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-xs"
+                  className="h-6 text-xs p-1"
                   onClick={() => onFilterChange({...filters, filterTags: []})}
                 >
                   Clear
@@ -190,60 +190,65 @@ export function TaskFilter({ filters, onFilterChange, availableTags = [] }: Task
             </div>
             
             {filters.filterTags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-2 p-2 bg-muted/50 rounded-md">
-                <div className="w-full text-xs text-muted-foreground mb-1.5">Selected:</div>
+              <div className="flex flex-wrap gap-1 mb-1.5 py-1 px-1.5 bg-muted/50 rounded-md">
                 {filters.filterTags.map(tag => (
                   <Badge 
                     key={tag} 
                     variant="secondary"
-                    className="flex items-center gap-1"
+                    className="flex items-center gap-1 text-xs h-5"
                   >
                     #{tag}
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-4 w-4 p-0 hover:bg-transparent"
+                      className="h-3 w-3 p-0 hover:bg-transparent"
                       onClick={() => handleRemoveTag(tag)}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-2.5 w-2.5" />
                     </Button>
                   </Badge>
                 ))}
               </div>
             )}
             
-            <div className="rounded-md border overflow-hidden">
-              <div className="p-2 bg-muted/30 border-b">
-                <Input
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={handleTagInputKeyDown}
-                  placeholder="Add new tag..."
-                  className="h-7 text-sm"
-                />
-              </div>
-              
-              <ScrollArea className="h-32 p-2">
-                <div className="flex flex-wrap gap-1.5">
-                  {uniqueTags.length > 0 ? (
-                    uniqueTags.map(tag => (
-                      <Badge 
-                        key={tag} 
-                        variant={filters.filterTags.includes(tag) ? "default" : "outline"}
-                        className={`cursor-pointer ${filters.filterTags.includes(tag) ? "" : "hover:bg-secondary"}`}
-                        onClick={() => filters.filterTags.includes(tag) ? handleRemoveTag(tag) : handleAddTag(tag)}
-                      >
-                        #{tag}
-                      </Badge>
-                    ))
-                  ) : (
-                    <div className="w-full text-center text-sm text-muted-foreground py-4">
-                      No tags available yet
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
+            <div className="flex gap-1.5 items-center">
+              <Input
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagInputKeyDown}
+                placeholder="Add new tag..."
+                className="h-6 text-xs"
+              />
+              <Button 
+                size="sm" 
+                className="h-6 text-xs px-2"
+                disabled={!tagInput.trim()}
+                onClick={() => handleAddTag(tagInput)}
+              >
+                Add
+              </Button>
             </div>
+              
+            <ScrollArea className="h-14 p-1.5 border rounded-md mt-1">
+              <div className="flex flex-wrap gap-1">
+                {uniqueTags.length > 0 ? (
+                  uniqueTags.map(tag => (
+                    <Badge 
+                      key={tag} 
+                      variant={filters.filterTags.includes(tag) ? "default" : "outline"}
+                      className={`cursor-pointer text-xs h-5 ${filters.filterTags.includes(tag) ? "" : "hover:bg-secondary"}`}
+                      onClick={() => filters.filterTags.includes(tag) ? handleRemoveTag(tag) : handleAddTag(tag)}
+                    >
+                      #{tag}
+                    </Badge>
+                  ))
+                ) : (
+                  <div className="w-full text-center text-xs text-muted-foreground py-3">
+                    No tags available yet
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
           </div>
 
           <Separator className="my-3" />
