@@ -15,7 +15,7 @@ import type { Task, InsertTask } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { suggestTaskPriority } from "@/lib/task-analyzer";
 import { startOfDay, endOfDay, isWithinInterval, isPast, isToday } from "date-fns";
-// Dialog imports removed
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
@@ -24,7 +24,8 @@ export default function Home() {
   const [view, setView] = useState<"list" | "kanban">("list");
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
-  // Edit functionality removed
+  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [filterOptions, setFilterOptions] = useState<TaskFilterOptions>({
     showCompleted: true,
     showNotCompleted: true,
@@ -110,7 +111,34 @@ export default function Home() {
     }
   };
   
-  // Edit task functionality removed as requested
+  // Edit task functionality
+  const handleEditTask = (task: Task) => {
+    setTaskToEdit(task);
+    setIsEditModalOpen(true);
+  };
+  
+  const handleUpdateTask = (data: InsertTask) => {
+    if (!taskToEdit) return;
+    
+    const updated = updateTask(taskToEdit.id, data);
+    if (updated) {
+      queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
+        prev?.map(t => t.id === taskToEdit.id ? updated : t) || []
+      );
+      toast({
+        title: "Task updated",
+        description: "Your task has been updated successfully",
+      });
+      setIsEditModalOpen(false);
+      setTaskToEdit(null);
+    } else {
+      toast({
+        title: "Error",
+        description: "There was a problem updating your task",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Helper function to determine if a task is overdue
   const isTaskOverdue = (task: Task): boolean => {
@@ -224,7 +252,7 @@ export default function Home() {
                   onImportTasks={handleImportTasks}
                   onTimeUpdate={handleTimeUpdate}
                   onUpdateStatus={handleUpdateStatus}
-                  onEditTask={() => {/* Editing disabled */}}
+                  onEditTask={handleEditTask}
                   view={view}
                   isFocusMode={isFocusMode}
                   onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
@@ -241,7 +269,7 @@ export default function Home() {
             </div>
             <TaskArchive 
               tasks={tasks} 
-              onEditTask={() => {/* Editing disabled */}}
+              onEditTask={handleEditTask}
             />
           </TabsContent>
           
@@ -250,7 +278,23 @@ export default function Home() {
           </TabsContent>
         </Tabs>
 
-        {/* Dialog removed - edit functionality removed */}
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Task</DialogTitle>
+              <DialogDescription>
+                Make changes to your task here. Click save when you're done.
+              </DialogDescription>
+            </DialogHeader>
+            {taskToEdit && (
+              <TaskForm 
+                onSubmit={handleUpdateTask}
+                defaultValues={taskToEdit}
+                onCancel={() => setIsEditModalOpen(false)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

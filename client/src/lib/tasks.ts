@@ -204,82 +204,83 @@ export function simpleUpdateTask(id: number, title: string): Task | null {
   }
 }
 
-export function updateTask(id: number, updates: Partial<InsertTask>) {
+/**
+ * Simple, reliable function to update a task with given properties
+ */
+export function updateTask(id: number, updates: Partial<InsertTask>): Task | null {
   try {
-    console.log("updateTask called with id:", id);
-    console.log("updates:", updates);
-    
     const tasks = getTasks();
-    console.log("Retrieved tasks:", tasks.length);
-    
     const index = tasks.findIndex(t => t.id === id);
-    console.log("Task index in array:", index);
     
     if (index === -1) {
-      console.error("Task not found with id:", id);
       return null;
     }
 
     const task = tasks[index];
-    console.log("Original task:", task);
     
-    // Create a new task object with all properties preserved
+    // Helper function to safely handle date fields
+    const safeDate = (date: any): Date | null => {
+      if (date === undefined || date === null) return null;
+      return date instanceof Date ? date : new Date(date);
+    };
+    
+    // Helper function to ensure array type and handle null/undefined
+    const safeArray = <T>(arr: T[] | undefined | null): T[] => {
+      return Array.isArray(arr) ? arr : [];
+    };
+    
+    // Helper for type checking a TaskLink
+    const isTaskLink = (item: any): item is { url: string; title: string } => {
+      return typeof item === 'object' && item !== null && 
+        typeof item.url === 'string' && 
+        typeof item.title === 'string';
+    };
+    
+    // Clean and validate links if provided
+    const processedLinks = updates.links !== undefined
+      ? safeArray(updates.links).filter(isTaskLink)
+      : task.links;
+    
+    // Create a clean updated task object
     const updatedTask: Task = {
-      // Keep original values
+      // Original metadata
       id: task.id,
       createdAt: task.createdAt,
+      
+      // Task properties with updates applied
+      title: updates.title ?? task.title,
+      priority: updates.priority ?? task.priority,
+      category: updates.category ?? task.category,
+      status: updates.status ?? task.status,
+      completed: updates.completed ?? task.completed,
+      
+      // Arrays with null safety
+      tags: updates.tags !== undefined ? safeArray(updates.tags) : safeArray(task.tags),
+      links: processedLinks,
+      
+      // Numeric values
+      timeSpent: updates.timeSpent ?? task.timeSpent ?? 0,
+      xpEarned: updates.xpEarned ?? task.xpEarned ?? 0,
+      
+      // Date fields
+      dueDate: updates.dueDate !== undefined ? safeDate(updates.dueDate) : task.dueDate,
       lastStarted: task.lastStarted,
       lastCompleted: task.lastCompleted,
       nextDue: task.nextDue,
       
-      // Update with new values
-      title: updates.title !== undefined ? updates.title : task.title,
-      priority: updates.priority !== undefined ? updates.priority : task.priority,
-      category: updates.category !== undefined ? updates.category : task.category,
-      status: updates.status !== undefined ? updates.status : task.status,
-      completed: updates.completed !== undefined ? updates.completed : task.completed,
+      // Recurrence fields 
+      recurrence: updates.recurrence ?? task.recurrence,
+      recurrenceInterval: updates.recurrenceInterval ?? task.recurrenceInterval,
       
-      // Special field handling
-      tags: updates.tags !== undefined ? updates.tags : (task.tags || []),
-      timeSpent: updates.timeSpent !== undefined ? updates.timeSpent : (task.timeSpent || 0),
-      xpEarned: updates.xpEarned !== undefined ? updates.xpEarned : (task.xpEarned || 0),
+      // Reminder fields
+      reminderEnabled: updates.reminderEnabled ?? task.reminderEnabled,
+      reminderTime: updates.reminderTime !== undefined ? safeDate(updates.reminderTime) : task.reminderTime,
       
-      // Handle date fields
-      dueDate: updates.dueDate !== undefined ? new Date(updates.dueDate) : task.dueDate,
-      
-      // Handle recurrence fields
-      recurrence: updates.recurrence !== undefined ? updates.recurrence : task.recurrence,
-      recurrenceInterval: updates.recurrenceInterval !== undefined 
-        ? updates.recurrenceInterval 
-        : task.recurrenceInterval,
-        
-      // Handle reminder fields
-      reminderEnabled: updates.reminderEnabled !== undefined 
-        ? updates.reminderEnabled 
-        : task.reminderEnabled,
-      reminderTime: updates.reminderTime !== undefined 
-        ? new Date(updates.reminderTime) 
-        : task.reminderTime,
-      
-      // Handle nullable fields
+      // Optional fields
       notes: updates.notes !== undefined ? updates.notes : task.notes,
       attachmentUrl: updates.attachmentUrl !== undefined ? updates.attachmentUrl : task.attachmentUrl,
       attachmentName: updates.attachmentName !== undefined ? updates.attachmentName : task.attachmentName,
-      
-      // Special handling for links to ensure correct format
-      links: updates.links !== undefined
-        ? Array.isArray(updates.links)
-          ? updates.links
-              .filter(link => typeof link === 'object' && link !== null && 'url' in link && 'title' in link)
-              .map(link => ({ 
-                url: (link as any).url, 
-                title: (link as any).title 
-              }))
-          : []
-        : (task.links || [])
     };
-
-    console.log("Fully rebuilt task:", updatedTask);
 
     // If marking as completed and task is recurring, update lastCompleted and calculate next due date
     if (updates.completed && !task.completed && task.recurrence !== "none") {
@@ -288,13 +289,12 @@ export function updateTask(id: number, updates: Partial<InsertTask>) {
       updatedTask.completed = false; // Reset completion for next occurrence
     }
 
-    console.log("Final updated task:", updatedTask);
+    // Save changes
     tasks[index] = updatedTask;
     saveTasks(tasks);
     return updatedTask;
   } catch (error) {
-    console.error("Error in updateTask:", error);
-    console.error("Error details:", error instanceof Error ? error.message : String(error));
+    console.error("Error updating task:", error);
     return null;
   }
 }
