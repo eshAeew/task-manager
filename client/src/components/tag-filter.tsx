@@ -56,15 +56,15 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
   const hasMoreTags = uniqueTags.length > INITIAL_TAG_COUNT;
 
   return (
-    <Card className="p-3">
-      <div className="flex items-center gap-2 mb-3">
-        <Tag className="h-4 w-4 text-blue-500" />
-        <h3 className="text-sm font-medium">Filter by Tags</h3>
+    <Card className="p-2">
+      <div className="flex items-center gap-2 mb-2">
+        <Tag className="h-3.5 w-3.5 text-blue-500" />
+        <h3 className="text-xs font-medium">Filter by Tags</h3>
         {selectedTags.length > 0 && (
           <Button
             variant="ghost"
             size="sm"
-            className="ml-auto h-7 text-xs"
+            className="ml-auto h-6 text-xs px-2 py-0"
             onClick={() => onTagsChange([])}
           >
             Clear All
@@ -73,12 +73,12 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
       </div>
 
       {selectedTags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3 py-1.5 px-2 bg-muted/50 rounded-md">
+        <div className="flex flex-wrap gap-1 mb-2 py-1 px-1.5 bg-muted/50 rounded-md">
           {selectedTags.map(tag => (
             <Badge 
               key={tag} 
               variant="secondary"
-              className="flex items-center gap-1 text-xs"
+              className="flex items-center gap-0.5 text-xs h-5 py-0 px-1.5"
             >
               #{tag}
               <Button
@@ -94,17 +94,17 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
         </div>
       )}
       
-      <div className="flex gap-1.5 items-center mb-3">
+      <div className="flex gap-1.5 items-center mb-2">
         <Input
           value={tagInput}
           onChange={(e) => setTagInput(e.target.value)}
           onKeyDown={handleTagInputKeyDown}
           placeholder="Add new tag..."
-          className="h-8 text-xs"
+          className="h-7 text-xs"
         />
         <Button 
           size="sm" 
-          className="h-8 text-xs px-2"
+          className="h-7 text-xs px-2"
           disabled={!tagInput.trim()}
           onClick={() => handleAddTag(tagInput)}
         >
@@ -115,27 +115,27 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
         
       {uniqueTags.length > 0 ? (
         <div className="border rounded-md">
-          <ScrollArea className="h-24 p-1.5">
-            <div className="flex flex-wrap gap-1.5 pr-2">
+          <div className="p-1">
+            <div className="flex flex-wrap gap-1">
               {visibleTags.map(tag => (
                 <Badge 
                   key={tag} 
                   variant={selectedTags.includes(tag) ? "default" : "outline"}
-                  className={`cursor-pointer text-xs ${selectedTags.includes(tag) ? "" : "hover:bg-secondary"}`}
+                  className={`cursor-pointer text-xs h-5 py-0 ${selectedTags.includes(tag) ? "" : "hover:bg-secondary"}`}
                   onClick={() => toggleTag(tag)}
                 >
                   #{tag}
                 </Badge>
               ))}
             </div>
-          </ScrollArea>
+          </div>
           
           {hasMoreTags && (
-            <div className="border-t px-1.5 py-1">
+            <div className="border-t">
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full h-6 text-xs justify-center items-center"
+                className="w-full h-4 text-xs justify-center items-center p-0"
                 onClick={() => setShowAllTags(!showAllTags)}
               >
                 {showAllTags ? "Show Less" : `Load More (${uniqueTags.length - INITIAL_TAG_COUNT})`}
@@ -145,8 +145,8 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
           )}
         </div>
       ) : (
-        <div className="h-24 flex items-center justify-center border rounded-md">
-          <div className="text-center text-xs text-muted-foreground py-3">
+        <div className="flex items-center justify-center border rounded-md py-1.5">
+          <div className="text-center text-xs text-muted-foreground">
             No tags available yet
           </div>
         </div>
