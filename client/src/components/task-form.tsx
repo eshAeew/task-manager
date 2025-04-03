@@ -64,8 +64,8 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
       tags: [],
       links: [],
       notes: "",
-      attachmentUrl: null,
-      attachmentName: null,
+      attachmentUrl: undefined,
+      attachmentName: undefined,
       ...processedDefaults,
     },
   });
@@ -249,9 +249,9 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
       reminderTime: data.reminderTime || undefined,
       
       // Nullable fields
-      attachmentUrl: data.attachmentUrl || null,
-      attachmentName: data.attachmentName || null,
-      notes: data.notes || null,
+      attachmentUrl: data.attachmentUrl || undefined,
+      attachmentName: data.attachmentName || undefined,
+      notes: data.notes || undefined,
       
       // Carefully process links to make sure they're valid
       links: Array.isArray(data.links) 
@@ -391,8 +391,8 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
                         size="sm"
                         className="text-destructive hover:text-destructive"
                         onClick={() => {
-                          form.setValue("attachmentUrl", null);
-                          form.setValue("attachmentName", null);
+                          form.setValue("attachmentUrl", undefined);
+                          form.setValue("attachmentName", undefined);
                         }}
                         aria-label="Remove attachment"
                       >
