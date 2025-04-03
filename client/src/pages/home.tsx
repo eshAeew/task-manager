@@ -69,7 +69,7 @@ export default function Home() {
     });
     if (updated) {
       queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
-        prev?.map(t => t.id === id ? updated : t) || []
+        prev?.map(t => t.id === id ? updated as Task : t) || []
       );
     }
   };
@@ -78,7 +78,7 @@ export default function Home() {
     const updated = updateTask(id, { status });
     if (updated) {
       queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
-        prev?.map(t => t.id === id ? updated : t) || []
+        prev?.map(t => t.id === id ? updated as Task : t) || []
       );
     }
   };
@@ -104,7 +104,7 @@ export default function Home() {
     const updated = updateTask(taskId, { timeSpent });
     if (updated) {
       queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
-        prev?.map(t => t.id === taskId ? updated : t) || []
+        prev?.map(t => t.id === taskId ? updated as Task : t) || []
       );
     }
   };
@@ -120,7 +120,7 @@ export default function Home() {
     const updated = updateTask(editingTask.id, data);
     if (updated) {
       queryClient.setQueryData<Task[]>(["/api/tasks"], prev => 
-        prev?.map(t => t.id === editingTask.id ? updated : t) || []
+        prev?.map(t => t.id === editingTask.id ? updated as Task : t) || []
       );
       setIsEditDialogOpen(false);
       setEditingTask(null);
@@ -210,19 +210,18 @@ export default function Home() {
               </div>
               <div>
                 <div className="flex flex-col gap-3 mb-4">
-                  <div className="flex justify-between items-center">
-                    <DateFilter
-                      selectedDate={selectedDate}
-                      onDateSelect={setSelectedDate}
-                    />
-                    <TaskFilter 
-                      filters={filterOptions} 
-                      onFilterChange={setFilterOptions}
-                    />
-                  </div>
-                  
-                  <div className="flex gap-2 items-center">
-                    <div className="text-sm text-muted-foreground font-medium">Tags:</div>
+                  <div className="flex flex-wrap gap-3 items-center justify-between">
+                    <div className="flex gap-2 items-center">
+                      <DateFilter
+                        selectedDate={selectedDate}
+                        onDateSelect={setSelectedDate}
+                      />
+                      <TaskFilter 
+                        filters={filterOptions} 
+                        onFilterChange={setFilterOptions}
+                      />
+                    </div>
+                    
                     <TagFilter 
                       selectedTags={filterOptions.filterTags}
                       availableTags={Array.from(new Set(
