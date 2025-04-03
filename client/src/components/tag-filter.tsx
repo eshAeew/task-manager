@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
-import { Tag, X, Plus } from "lucide-react";
+import { Tag, X, Plus, ChevronDown } from "lucide-react";
 
 interface TagFilterProps {
   selectedTags: string[];
@@ -14,6 +14,10 @@ interface TagFilterProps {
 
 export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilterProps) {
   const [tagInput, setTagInput] = useState("");
+  const [showAllTags, setShowAllTags] = useState(false);
+  
+  // Initial number of tags to show
+  const INITIAL_TAG_COUNT = 6;
 
   const handleAddTag = (tag: string) => {
     if (!tag.trim()) return;
@@ -46,6 +50,10 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
 
   // Create a list of unique tags
   const uniqueTags = Array.from(new Set([...availableTags])).sort();
+  
+  // Get tags to display based on show all toggle
+  const visibleTags = showAllTags ? uniqueTags : uniqueTags.slice(0, INITIAL_TAG_COUNT);
+  const hasMoreTags = uniqueTags.length > INITIAL_TAG_COUNT;
 
   return (
     <Card className="p-3">
@@ -106,20 +114,36 @@ export function TagFilter({ selectedTags, availableTags, onTagsChange }: TagFilt
       </div>
         
       {uniqueTags.length > 0 ? (
-        <ScrollArea className="h-24 p-1.5 border rounded-md">
-          <div className="flex flex-wrap gap-1.5 pr-2">
-            {uniqueTags.map(tag => (
-              <Badge 
-                key={tag} 
-                variant={selectedTags.includes(tag) ? "default" : "outline"}
-                className={`cursor-pointer text-xs ${selectedTags.includes(tag) ? "" : "hover:bg-secondary"}`}
-                onClick={() => toggleTag(tag)}
+        <div className="border rounded-md">
+          <ScrollArea className="h-24 p-1.5">
+            <div className="flex flex-wrap gap-1.5 pr-2">
+              {visibleTags.map(tag => (
+                <Badge 
+                  key={tag} 
+                  variant={selectedTags.includes(tag) ? "default" : "outline"}
+                  className={`cursor-pointer text-xs ${selectedTags.includes(tag) ? "" : "hover:bg-secondary"}`}
+                  onClick={() => toggleTag(tag)}
+                >
+                  #{tag}
+                </Badge>
+              ))}
+            </div>
+          </ScrollArea>
+          
+          {hasMoreTags && (
+            <div className="border-t px-1.5 py-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full h-6 text-xs justify-center items-center"
+                onClick={() => setShowAllTags(!showAllTags)}
               >
-                #{tag}
-              </Badge>
-            ))}
-          </div>
-        </ScrollArea>
+                {showAllTags ? "Show Less" : `Load More (${uniqueTags.length - INITIAL_TAG_COUNT})`}
+                <ChevronDown className={`h-3 w-3 ml-1 transition-transform ${showAllTags ? 'rotate-180' : ''}`} />
+              </Button>
+            </div>
+          )}
+        </div>
       ) : (
         <div className="h-24 flex items-center justify-center border rounded-md">
           <div className="text-center text-xs text-muted-foreground py-3">
