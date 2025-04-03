@@ -9,6 +9,7 @@ import { TrashBin } from "@/components/trash-bin";
 import { VoiceInput } from "@/components/voice-input";
 import { DateFilter } from "@/components/date-filter";
 import { TaskFilter, TaskFilterOptions } from "@/components/task-filter";
+import { TagFilter } from "@/components/tag-filter";
 import { getTasks, addTask, updateTask, deleteTask } from "@/lib/tasks";
 import type { Task, InsertTask } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -215,9 +216,16 @@ export default function Home() {
                   <TaskFilter 
                     filters={filterOptions} 
                     onFilterChange={setFilterOptions}
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <TagFilter 
+                    selectedTags={filterOptions.filterTags}
                     availableTags={Array.from(new Set(
                       tasks.flatMap(task => task.tags || [])
                     ))}
+                    onTagsChange={(tags) => setFilterOptions({...filterOptions, filterTags: tags})}
                   />
                 </div>
                 <TaskList 
