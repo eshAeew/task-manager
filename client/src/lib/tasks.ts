@@ -157,13 +157,63 @@ export function addTask(task: InsertTask): Task {
   return newTask;
 }
 
+export function simpleUpdateTask(id: number, title: string): Task | null {
+  console.log("simpleUpdateTask called with id:", id, "title:", title);
+  try {
+    // Get all tasks
+    const tasks = getTasks();
+    console.log("Retrieved tasks:", tasks.length);
+    
+    // Find the task
+    const index = tasks.findIndex(t => t.id === id);
+    console.log("Task index in array:", index);
+    
+    if (index === -1) {
+      console.error("Task not found with id:", id);
+      return null;
+    }
+    
+    // Get the original task
+    const originalTask = tasks[index];
+    console.log("Original task:", originalTask);
+    
+    // Create simple update
+    const updatedTask = { 
+      ...originalTask,
+      title: title 
+    };
+    
+    console.log("Simple updated task:", updatedTask);
+    
+    // Update in array
+    tasks[index] = updatedTask;
+    
+    // Save to localStorage
+    console.log("Saving tasks to localStorage...");
+    saveTasks(tasks);
+    
+    // Verify the save worked
+    const verifyTasks = getTasks();
+    const verifiedTask = verifyTasks.find(t => t.id === id);
+    console.log("Verified saved task:", verifiedTask);
+    
+    return updatedTask;
+  } catch (error) {
+    console.error("Error in simpleUpdateTask:", error);
+    return null;
+  }
+}
+
 export function updateTask(id: number, updates: Partial<InsertTask>) {
   try {
     console.log("updateTask called with id:", id);
     console.log("updates:", updates);
     
     const tasks = getTasks();
+    console.log("Retrieved tasks:", tasks.length);
+    
     const index = tasks.findIndex(t => t.id === id);
+    console.log("Task index in array:", index);
     
     if (index === -1) {
       console.error("Task not found with id:", id);

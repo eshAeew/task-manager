@@ -353,14 +353,34 @@ export default function Home() {
                     className="w-full px-4 py-2 bg-blue-500 text-white rounded font-medium text-sm"
                     onClick={() => {
                       console.log("Forcing update on task:", editingTask.id);
-                      // Create a minimal update with just the title to test
-                      const minimalUpdate = {
-                        title: editingTask.title,
-                        priority: editingTask.priority || "medium",
-                        category: editingTask.category || "other",
-                        dueDate: editingTask.dueDate || new Date()
-                      };
-                      handleUpdateTask(minimalUpdate as InsertTask);
+                      
+                      // Import the simpleUpdateTask function
+                      const { simpleUpdateTask } = require('@/lib/tasks');
+                      
+                      // Call the simple update function directly
+                      const result = simpleUpdateTask(editingTask.id, editingTask.title + " (Updated)");
+                      console.log("Simple update result:", result);
+                      
+                      if (result) {
+                        // Show success message
+                        toast({
+                          title: "Task updated",
+                          description: "Your task has been successfully updated with the simpler update function.",
+                        });
+                        
+                        // Close the dialog
+                        setIsEditDialogOpen(false);
+                        setEditingTask(null);
+                        
+                        // Force a refetch to ensure we have the latest data
+                        refetch();
+                      } else {
+                        toast({
+                          title: "Update failed",
+                          description: "The simple update function failed.",
+                          variant: "destructive",
+                        });
+                      }
                     }}
                   >
                     Force Update (Debug)
