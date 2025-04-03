@@ -54,6 +54,8 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
       tags: [],
       links: [],
       notes: "",
+      attachmentUrl: null,
+      attachmentName: null,
       ...processedDefaults,
     },
   });
@@ -200,10 +202,15 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
   const attachmentName = form.watch("attachmentName");
 
   const handleSubmit = (data: InsertTask) => {
-    onSubmit({
+    // Ensure attachment fields are properly handled
+    const processedData = {
       ...data,
       dueDate: data.dueDate || new Date(),
-    });
+      attachmentUrl: data.attachmentUrl || null,
+      attachmentName: data.attachmentName || null
+    };
+    
+    onSubmit(processedData);
     form.reset();
     onCancel?.();
   };
@@ -323,8 +330,8 @@ export const TaskForm = ({ onSubmit, defaultValues, onCancel }: TaskFormProps) =
                         size="sm"
                         className="text-destructive hover:text-destructive"
                         onClick={() => {
-                          form.setValue("attachmentUrl", "");
-                          form.setValue("attachmentName", "");
+                          form.setValue("attachmentUrl", null);
+                          form.setValue("attachmentName", null);
                         }}
                         aria-label="Remove attachment"
                       >
