@@ -18,7 +18,8 @@ import {
   Gamepad2, 
   BookOpen,
   StickyNote,
-  Crown
+  Crown,
+  LineChart
 } from "lucide-react";
 import { InsertTask, Task } from "@shared/schema";
 import { addTask } from "@/lib/tasks";
@@ -88,6 +89,15 @@ function Navigation() {
               Chess
             </Button>
           </Link>
+          <a href="https://fintracc.netlify.app" target="_blank" rel="noopener noreferrer">
+            <Button 
+              variant="ghost"
+              className="text-indigo-600 hover:text-indigo-800"
+            >
+              <LineChart className="mr-2 h-4 w-4" />
+              FinTracc
+            </Button>
+          </a>
           <Link href="/support">
             <Button variant="ghost">
               <HelpCircle className="mr-2 h-4 w-4" />
