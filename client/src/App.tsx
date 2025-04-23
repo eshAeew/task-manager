@@ -89,7 +89,7 @@ function Navigation() {
               Chess
             </Button>
           </Link>
-          <a href="https://fintracc.netlify.app" target="_blank" rel="noopener noreferrer">
+          <a href="https://fintracc.netlify.app" rel="noopener noreferrer">
             <Button 
               variant="ghost"
               className="text-indigo-600 hover:text-indigo-800"
