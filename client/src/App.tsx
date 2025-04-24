@@ -99,7 +99,7 @@ function Navigation() {
               FinTracc
             </Button>
           </a>
-          <a href="https://pro-notepad.netlify.app" target="_blank" rel="noopener noreferrer">
+          <a href="https://pro-notepad.netlify.app" rel="noopener noreferrer">
             <Button 
               variant="ghost"
               className="text-green-600 hover:text-green-800"
