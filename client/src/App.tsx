@@ -19,7 +19,8 @@ import {
   BookOpen,
   StickyNote,
   Crown,
-  LineChart
+  LineChart,
+  Edit
 } from "lucide-react";
 import { InsertTask, Task } from "@shared/schema";
 import { addTask } from "@/lib/tasks";
@@ -96,6 +97,15 @@ function Navigation() {
             >
               <LineChart className="mr-2 h-4 w-4" />
               FinTracc
+            </Button>
+          </a>
+          <a href="https://pro-notepad.netlify.app" target="_blank" rel="noopener noreferrer">
+            <Button 
+              variant="ghost"
+              className="text-green-600 hover:text-green-800"
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              Notepad++
             </Button>
           </a>
           <Link href="/support">
