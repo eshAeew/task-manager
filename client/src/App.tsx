@@ -90,7 +90,7 @@ function Navigation() {
               Chess
             </Button>
           </Link>
-          <a href="https://fintracc.netlify.app" rel="noopener noreferrer">
+          {/*<a href="https://fintracc.netlify.app" rel="noopener noreferrer">
             <Button 
               variant="ghost"
               className="text-indigo-600 hover:text-indigo-800"
@@ -98,7 +98,7 @@ function Navigation() {
               <LineChart className="mr-2 h-4 w-4" />
               FinTracc
             </Button>
-          </a>
+          </a>*/}
           <a href="https://pro-notepad.netlify.app" rel="noopener noreferrer">
             <Button 
               variant="ghost"
