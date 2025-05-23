@@ -12,7 +12,7 @@ export default function Support() {
         <CardContent className="space-y-6">
           <div className="flex justify-center">
             <img
-              src="blob:https://web.whatsapp.com/01049ae6-2b07-487e-8762-7a6a734344b3"
+              src="/qr.jpg"
               alt="Support QR Code"
               className="max-w-[200px] rounded-lg shadow-lg"
             />
